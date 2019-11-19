@@ -6,7 +6,8 @@
 //  Copyright © 2018 wemomo.com. All rights reserved.
 //
 
-#import "MLNTableViewAdapter.h"
+#import "MLNAutoresizingTableViewAdapter.h"
+#import "MLNAdapterCachesManager.h"
 #import "MLNKitHeader.h"
 #import "MLNViewExporterMacro.h"
 #import "MLNTableView.h"
@@ -17,7 +18,7 @@
 
 #define kDefaultPressColor [UIColor colorWithRed:211/255.0 green:211/255.0 blue:211/255.0 alpha:1.0]
 
-@interface MLNTableViewAdapter() <MLNTableViewCellSettingProtocol>
+@interface MLNAutoresizingTableViewAdapter() <MLNTableViewCellSettingProtocol>
 
 @property (nonatomic, strong) MLNBlock *sectionsNumberCallback;
 @property (nonatomic, strong) MLNBlock *rowNumbersCallback;
@@ -30,7 +31,7 @@
 @property (nonatomic, strong) UIColor *pressedColor;
 @end
 
-@implementation MLNTableViewAdapter
+@implementation MLNAutoresizingTableViewAdapter
 
 - (instancetype)init
 {
@@ -258,28 +259,6 @@
     }
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    CGFloat height = CGFloatValueFromNumber([self.cachesManager layoutInfoWithIndexPath:indexPath]);
-    if (height > 0) {
-        return height;
-    }
-    NSString *reuseId = [self reuseIdAt:indexPath];
-    MLNBlock *reuseHeightForRowCallback = [self heightForRowCallbackByReuseId:reuseId];
-    MLNKitLuaAssert(reuseHeightForRowCallback, @"The 'heightForCell' callback must not be nil!");
-    if (reuseHeightForRowCallback) {
-        [reuseHeightForRowCallback addIntArgument:(int)indexPath.section+1];
-        [reuseHeightForRowCallback addIntArgument:(int)indexPath.row+1];
-        id heightValue = [reuseHeightForRowCallback callIfCan];
-        MLNKitLuaAssert(heightValue && [heightValue isMemberOfClass:NSClassFromString(@"__NSCFNumber")], @"The return value of method 'heightForCell/heightForCellByReuseId' must be a number!");
-        height = [heightValue floatValue];
-        height = height < 0 ? 0 : height;
-        [self.cachesManager updateLayoutInfo:heightValue forIndexPath:indexPath];
-        return height;
-    }
-    return 0.f;
-}
-
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell<MLNReuseCellProtocol> *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
     NSString *reuseId = [self reuseIdAt:indexPath];
@@ -452,26 +431,26 @@
 
 
 #pragma mark - Setup For Lua
-LUA_EXPORT_BEGIN(MLNTableViewAdapter)
-LUA_EXPORT_METHOD(sectionCount, "lua_numbersOfSections:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(rowCount, "lua_numberOfRowsInSection:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(reuseId, "lua_reuseIdWithCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(initCellByReuseId, "lua_initCellBy:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(fillCellDataByReuseId, "lua_reuseCellBy:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(initCell, "lua_initCellCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(fillCellData, "lua_reuseCellCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(selectedRowByReuseId, "lua_selectedRow:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(selectedRow, "lua_selectedRowCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(longPressRowByReuseId, "lua_longPressRow:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(longPressRow, "lua_longPressRowCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(heightForCell, "lua_heightForRowCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(heightForCellByReuseId, "lua_heightForRowBy:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(cellWillAppear, "lua_cellWillAppearCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(cellDidDisappear, "lua_cellDidDisappearCallback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(cellWillAppearByReuseId, "lua_cellWillAppear:callback:", MLNTableViewAdapter)
-LUA_EXPORT_METHOD(cellDidDisappearByReuseId, "lua_cellDidDisappear:callback:", MLNTableViewAdapter)
-LUA_EXPORT_PROPERTY(showPressed, "setShowPressedColor:", "showPressedColor",MLNTableViewAdapter)
-LUA_EXPORT_PROPERTY(pressedColor, "setPressedColor:","pressedColor", MLNTableViewAdapter)
-LUA_EXPORT_END(MLNTableViewAdapter, TableViewAdapter, NO, NULL, NULL)
+LUA_EXPORT_BEGIN(MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(sectionCount, "lua_numbersOfSections:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(rowCount, "lua_numberOfRowsInSection:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(reuseId, "lua_reuseIdWithCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(initCellByReuseId, "lua_initCellBy:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(fillCellDataByReuseId, "lua_reuseCellBy:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(initCell, "lua_initCellCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(fillCellData, "lua_reuseCellCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(selectedRowByReuseId, "lua_selectedRow:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(selectedRow, "lua_selectedRowCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(longPressRowByReuseId, "lua_longPressRow:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(longPressRow, "lua_longPressRowCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(heightForCell, "lua_heightForRowCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(heightForCellByReuseId, "lua_heightForRowBy:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(cellWillAppear, "lua_cellWillAppearCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(cellDidDisappear, "lua_cellDidDisappearCallback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(cellWillAppearByReuseId, "lua_cellWillAppear:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_METHOD(cellDidDisappearByReuseId, "lua_cellDidDisappear:callback:", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_PROPERTY(showPressed, "setShowPressedColor:", "showPressedColor",MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_PROPERTY(pressedColor, "setPressedColor:","pressedColor", MLNAutoresizingTableViewAdapter)
+LUA_EXPORT_END(MLNAutoresizingTableViewAdapter, AutoresizingTableViewAdapter, NO, NULL, NULL)
 
 @end
