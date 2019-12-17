@@ -16,8 +16,12 @@
 #import <NSString+MLNKit.h>
 #import <MLNLoadTimeStatistics.h>
 #import <MLNKitInstance.h>
+#import "MLNAutoresizingTableViewAdapter.h"
+#import "MLNFPSLabel.h"
 
 @interface MLNLuaPageViewController ()<MLNKitInstanceDelegate>
+
+@property (nonatomic, strong) MLNFPSLabel *fpsLabel;
 
 @end
 
@@ -83,7 +87,7 @@
 {
     //根据actionItem，解析出MLNPackage对象，计算出bundlePath，entryFile等信息
     MLNPackage *package = [[MLNPackage alloc] initWithActionItem:actionItem];
-    if (self = [super initWithEntryFilePath:package.entryFile extraInfo:actionItem.actionInfo]) {
+    if (self = [super initWithEntryFilePath:package.entryFile extraInfo:actionItem.actionInfo regClasses:@[[MLNAutoresizingTableViewAdapter class]]]) {
         [self changeCurrentBundlePath:package.bundlePath];
         self.package = package;
     }
@@ -92,6 +96,10 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+    self.fpsLabel = [[MLNFPSLabel alloc] initWithFrame:CGRectMake(10, screenHeight * 0.8, 50, 20)];
+//    self.fpsLabel.hidden = YES;
+    [self.view addSubview:self.fpsLabel];
     
     if (_package.needReload || _package.needDownload) {
         [self checkPackage];

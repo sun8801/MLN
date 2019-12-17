@@ -11,7 +11,7 @@
 #import "MLNKitHeader.h"
 #import "MLNViewExporterMacro.h"
 #import "MLNTableView.h"
-#import "MLNTableViewCell.h"
+#import "MLNAutoresizingTableViewCell.h"
 #import "MLNBlock.h"
 #import "NSDictionary+MLNSafety.h"
 #import "MLNTableViewCellSettingProtocol.h"
@@ -158,9 +158,9 @@
 {
     NSDictionary<NSString *, MLNBlock *> *initedCellCallbacks = self.initedCellCallbacks.copy;
     [initedCellCallbacks enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, MLNBlock * _Nonnull obj, BOOL * _Nonnull stop) {
-        [self.targetTableView registerClass:[MLNTableViewCell class] forCellReuseIdentifier:key];
+        [self.targetTableView registerClass:[MLNAutoresizingTableViewCell class] forCellReuseIdentifier:key];
     }];
-    [self.targetTableView registerClass:[MLNTableViewCell class] forCellReuseIdentifier:kMLNTableViewCellReuseID];
+    [self.targetTableView registerClass:[MLNAutoresizingTableViewCell class] forCellReuseIdentifier:kMLNTableViewCellReuseID];
 }
 
 #pragma mark - UITableViewDataSource
@@ -213,7 +213,7 @@
     if (!initCallback) {
         [self.targetTableView registerClass:[MLNTableViewCell class] forCellReuseIdentifier:reuseId];
     }
-    MLNTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseId forIndexPath:indexPath];
+    MLNAutoresizingTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseId forIndexPath:indexPath];
     cell.delegate = self;
     [cell pushContentViewWithLuaCore:self.mln_luaCore];
     if (!cell.isInited) {

@@ -32,13 +32,13 @@ datas = {
 --adapter初始化
 local function initAdapter()
     -----------------------TableViewAutoFitAdapter------------------------------
-    --adapter = TableViewAutoFitAdapter()--根据布局高度自适应
+    adapter = TableViewAutoFitAdapter()--根据布局高度自适应
     -----------------------TableViewAdapter-------------------------------------
-    adapter = TableViewAdapter()
+    --adapter = TableViewAdapter()
     ---------TableViewAdapter需自行计算item高度，并在heightForCell方法中返回---------
-    adapter:heightForCell(function(section, row)
-        return 120
-    end)
+   -- adapter:heightForCell(function(section, row)
+   --     return 120
+   -- end)
     -- 组数，一维list返回1
     adapter:sectionCount(function()
         return 1

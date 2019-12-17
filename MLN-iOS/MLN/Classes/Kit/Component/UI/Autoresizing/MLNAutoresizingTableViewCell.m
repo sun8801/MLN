@@ -13,6 +13,7 @@
 {
     CGFloat width = self.frame.size.width;
     CGFloat height = [self calculHeightWithWidth:width maxHeight:CGFLOAT_MAX];
+    [self requestLayoutIfNeed];
     return CGSizeMake(width, height);
 }
 

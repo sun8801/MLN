@@ -9,6 +9,8 @@
 #import "MLNDemoListViewController.h"
 #import "MLNKitViewController.h"
 #import "MLNLuaBundle.h"
+#import "MLNAutoresizingTableViewAdapter.h"
+#import "MLNLuaPageViewController.h"
 
 @interface MLNDemoListViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -64,7 +66,8 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     NSString *demoName = [self.demoArray objectAtIndex:indexPath.row];
-    MLNKitViewController *viewController = [[MLNKitViewController alloc] initWithEntryFilePath:demoName];
+    MLNLuaPageViewController *viewController = [[MLNLuaPageViewController alloc] initWithEntryFilePath:demoName extraInfo:nil regClasses:@[[MLNAutoresizingTableViewAdapter class]]];
+    [viewController regClasses:@[[MLNAutoresizingTableViewAdapter class]]];
     MLNLuaBundle *bundle = [MLNLuaBundle mainBundleWithPath:@"inner_demo.bundle"];
     [viewController changeCurrentBundle:bundle];
     [self.navigationController pushViewController:viewController animated:YES];
@@ -90,6 +93,7 @@
                        @"TableViewDemo.lua",
                        @"ViewPagerDemo.lua",
                        @"WaterfallViewDemo.lua",
+                       @"Mainaa.lua",
                        ];
     }
     return _demoArray;

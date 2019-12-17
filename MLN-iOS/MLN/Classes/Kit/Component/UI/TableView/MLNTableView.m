@@ -353,10 +353,11 @@
         _innerTableView = [[MLNInnerTableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
         if (@available(iOS 11.0, *)) {
             _innerTableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-            _innerTableView.estimatedRowHeight = 0.f;
             _innerTableView.estimatedSectionFooterHeight = 0.f;
             _innerTableView.estimatedSectionHeaderHeight = 0.f;
         }
+        _innerTableView.rowHeight = UITableViewAutomaticDimension;
+        _innerTableView.estimatedRowHeight = 50;
         _innerTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
         _innerTableView.backgroundColor = [UIColor clearColor];
         _innerTableView.containerView = self;

@@ -37,14 +37,14 @@
 
 - (void)setupBackButton
 {
-    if (!kMemoryTest) {
+//    if (!kMemoryTest) {
         [self backButton];
         
         CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
         self.fpsLabel = [[MLNFPSLabel alloc] initWithFrame:CGRectMake(10, screenHeight * 0.8, 50, 20)];
         self.fpsLabel.hidden = YES;
         [self.view addSubview:self.fpsLabel];
-    }
+//    }
 }
 
 - (void)setupTabbarItems

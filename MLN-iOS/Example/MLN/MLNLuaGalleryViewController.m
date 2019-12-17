@@ -57,9 +57,9 @@
         MLNLuaPageViewController *viewController = [[MLNLuaPageViewController alloc] initWithEntryFilePath:entryFile];
         viewController.kitInstance.delegate = self;
         [viewController regClasses:@[[MLNTestMe class],
-                          [MLNStaticTest class],
-                          [MLNGlobalVarTest class],
-                          [MLNGlobalFuncTest class]]];
+                                     [MLNStaticTest class],
+                                     [MLNGlobalVarTest class],
+                                     [MLNGlobalFuncTest class]]];
         [viewController changeCurrentBundle:bundle];
         [self addChildViewController:viewController];
         [self.view addSubview:viewController.view];
@@ -84,7 +84,7 @@
     self.galleryButton.backgroundColor = [UIColor orangeColor];
     [self.galleryButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [self.galleryButton addTarget:self action:@selector(galleryButtonClicked:) forControlEvents:UIControlEventTouchUpInside];
-//    [self.view addSubview:self.galleryButton];
+    //    [self.view addSubview:self.galleryButton];
     
     CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
     self.fpsLabel = [[MLNFPSLabel alloc] initWithFrame:CGRectMake(10, screenHeight * 0.8, 50, 20)];
@@ -117,7 +117,7 @@
 
 - (void)showLuaScriptLoadTime
 {
-//    [self.contentViewController.view addSubview:self.loadTimeLabel];
+    //    [self.contentViewController.view addSubview:self.loadTimeLabel];
     self.loadTimeLabel.text = [NSString stringWithFormat:@"%.0f ms", [self.loadTimeStatistics luaCoreCreateTime] * 1000];
     CGSize loadTimeLabelSize = [self.loadTimeLabel.text sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
     CGFloat loadTimeLabelY = [UIScreen mainScreen].bounds.size.height * 0.75;
