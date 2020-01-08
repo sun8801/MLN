@@ -12,7 +12,7 @@
 
 @interface MLNCollectionViewCell ()
 
-@property (nonatomic, strong) MLNReuseContentView *luaContentView;
+
 
 @end
 

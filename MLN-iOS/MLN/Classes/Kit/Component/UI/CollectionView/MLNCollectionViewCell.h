@@ -12,5 +12,6 @@
 
 @interface MLNCollectionViewCell : UICollectionViewCell <MLNReuseCellProtocol>
 
+@property (nonatomic, strong) MLNReuseContentView *luaContentView;
 
 @end

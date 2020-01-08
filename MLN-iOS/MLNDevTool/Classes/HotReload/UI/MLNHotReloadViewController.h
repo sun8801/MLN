@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithNavigationBarTransparent:(BOOL)transparent;
 - (instancetype)initWithRegisterClasses:(nullable NSArray<Class<MLNExportProtocol>> *)regClasses extraInfo:(nullable NSDictionary *)extraInfo;
 - (instancetype)initWithRegisterClasses:(nullable NSArray<Class<MLNExportProtocol>> *)regClasses extraInfo:(nullable NSDictionary *)extraInfo navigationBarTransparent:(BOOL)transparent;
+- (UIView *)findViewById:(NSString *)identifier;
 
 - (instancetype)initWithEntryFilePath:(NSString *)entryFilePath extraInfo:(nullable NSDictionary *)extraInfo regClasses:(nullable NSArray<Class<MLNExportProtocol>> *)regClasses navigationBarTransparent:(BOOL)transparent;
 

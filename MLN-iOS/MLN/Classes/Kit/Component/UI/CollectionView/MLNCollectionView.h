@@ -13,6 +13,7 @@
 @interface MLNCollectionView : MLNScrollCallbackView <MLNEntityExportProtocol>
 
 @property (nonatomic, weak) id<MLNCollectionViewAdapterProtocol> adapter;
+- (void)lua_reloadData;
 
 @end
 

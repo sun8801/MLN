@@ -116,6 +116,22 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
+- (UIView *)findViewById:(NSString *)identifier
+{
+    lua_State *L = self.kitInstance.luaCore.state;
+    int base = lua_gettop(L);
+    lua_getglobal(L, "layout");
+    lua_pushstring(L, identifier.UTF8String);
+    lua_rawget(L, -2);
+    MLNUserData *ud = (MLNUserData *)lua_touserdata(L, -1);
+    UIView *view = nil;
+    if (ud) {\
+        view = (__bridge __unsafe_unretained UIView *)ud->object;
+    }
+    lua_settop(L, base);
+    return view;
+}
+
 @end
 
 
