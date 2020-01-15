@@ -9,6 +9,7 @@
 #import "MLNKitInstance.h"
 #import "MLNLuaBundle.h"
 #import "MLNKitInstanceFactory.h"
+#import "MLNDataBinding.h"
 
 @interface MLNKitViewController ()
 
@@ -155,6 +156,14 @@
         }
     }
     return _kitInstance;
+}
+
+- (MLNDataBinding *)dataBinding
+{
+    if (!_dataBinding) {
+        _dataBinding = [[MLNDataBinding alloc] init];
+    }
+    return _dataBinding;
 }
 
 @end

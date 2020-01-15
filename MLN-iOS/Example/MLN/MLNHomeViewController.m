@@ -19,6 +19,8 @@
 #import "MLNDemoListViewController.h"
 #import "MLNStaticTest.h"
 #import "MLNCollectionViewCell.h"
+#import "MLNTestMe.h"
+#import "MLNDataBinding.h"
 
 #define kConsoleWidth 250.f
 #define kConsoleHeight 280.f
@@ -39,6 +41,7 @@
 @property (nonatomic, strong) MLNOfflineViewController *offlineViewController;
 @property (nonatomic, strong) MLNHotReloadViewController *luaShow;
 @property (nonatomic, assign) int type;
+@property (nonatomic, strong) MLNTestMe *model;
 
 @end
 
@@ -47,11 +50,16 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    self.model = [[MLNTestMe alloc] init];
+    self.model.text = @"hello world!";
+    
     self.luaShow = [[MLNHotReloadViewController alloc] init];
     self.luaShow.view.frame = CGRectMake(20, 20, 200, 120);
     [self addChildViewController:self.luaShow];
     [self.view addSubview:self.luaShow.view];
     [self.luaShow didMoveToParentViewController:self];
+    
+    [self.luaShow.dataBinding bindData:self.model key:@"userData"];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -76,26 +84,29 @@
 //    MLNHotReloadViewController  *hotReloadVC = [[MLNHotReloadViewController alloc] initWithRegisterClasses:@[[MLNStaticTest class]] extraInfo:nil];
 //    [self.navigationController pushViewController:hotReloadVC animated:YES];
     
-    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
-    label.adapter = self;
-    [label lua_reloadData];
+//    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
+//    label.adapter = self;
+//    [label lua_reloadData];
+    
+    self.model.text = @"热重载";
 }
 
 - (IBAction)demoListButtonAction:(id)sender {
 //    MLNDemoListViewController *listVC = [[MLNDemoListViewController alloc] init];
 //    [self.navigationController pushViewController:listVC animated:YES];
-     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
-    label.adapter = self;
-    [label lua_reloadData];
-    
+//     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
+//    label.adapter = self;
+//    [label lua_reloadData];
+    self.model.text = @"例子";
 }
 
 - (IBAction)meilishuoButtonAction:(id)sender {
 //    MLNLuaGalleryViewController *viewController = [[MLNLuaGalleryViewController alloc] init];
 //    [self.navigationController pushViewController:viewController animated:YES];
-     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
-    label.adapter = self;
-    [label lua_reloadData];
+//     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
+//    label.adapter = self;
+//    [label lua_reloadData];
+    self.model.text = @"Demo工程";
 }
 
 @synthesize collectionView;

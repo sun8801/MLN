@@ -9,9 +9,12 @@
 #import <UIKit/UIKit.h>
 #import <MLN/MLNKit.h>
 
+@class MLNDataBinding;
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MLNHotReloadViewController : MLNKitViewController
+
+
 
 - (instancetype)initWithNavigationBarTransparent:(BOOL)transparent;
 - (instancetype)initWithRegisterClasses:(nullable NSArray<Class<MLNExportProtocol>> *)regClasses extraInfo:(nullable NSDictionary *)extraInfo;

@@ -15,12 +15,15 @@ NS_ASSUME_NONNULL_BEGIN
 @class MLNKitInstance;
 @class MLNKitInstanceHandlersManager;
 @class MLNLuaBundle;
+@class MLNDataBinding;
 /**
  提供一个默认的包含MLNKitInstance的视图控制器
  */
 @interface MLNKitViewController : UIViewController <MLNViewControllerProtocol> {
 @protected MLNKitInstance *_kitInstance;
 }
+
+@property (nonatomic, strong) MLNDataBinding *dataBinding;
 
 /**
  当前KitInstance
