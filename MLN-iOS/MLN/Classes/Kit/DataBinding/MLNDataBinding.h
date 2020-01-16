@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface MLNDataBinding : NSObject
 
 - (void)bindData:(NSObject *)data key:(NSString *)key;
+- (void)updateDataForKeyPath:(NSString *)keyPath value:(id)value;
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath;
 
 @end

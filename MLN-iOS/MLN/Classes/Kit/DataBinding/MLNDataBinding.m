@@ -42,6 +42,16 @@
     pthread_mutex_unlock(&_lock);
 }
 
+- (void)updateDataForKeyPath:(NSString *)keyPath value:(id)value
+{
+    id data = nil;
+    NSString *key = nil;
+    BOOL success = [self parseByKeyPath:keyPath retData:&data retKey:&key];
+    if (success) {
+        [data setValue:value forKeyPath:key];
+    }
+}
+
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath
 {
     NSParameterAssert(keyPath);
@@ -58,6 +68,23 @@
         return;
     }
     // new
+    id data = nil;
+    NSString *key = nil;
+    BOOL success = [self parseByKeyPath:keyPath retData:&data retKey:&key];
+    if (success) {
+        helper = [[MLNKVObserverHelper alloc] initWithTargetObject:data keyPath:key];
+        [helper addObserver:observer];
+        pthread_mutex_lock(&_lock);
+        [self.dataMap setValue:helper forKey:keyPath];
+        pthread_mutex_unlock(&_lock);
+    }
+}
+
+- (BOOL)parseByKeyPath:(NSString *)keyPath retData:(id *)retData retKey:(NSString **)retKey
+{
+    if (retData == NULL || retKey == NULL) {
+        return NO;
+    }
     NSArray<NSString *> *keyPathArray = [keyPath componentsSeparatedByString:@"."];
     if (keyPathArray.count > 1) {
         NSString *firstKey = keyPathArray.firstObject;
@@ -69,25 +96,23 @@
             for (int i = 1; i < keyPathArray.count; i++) {
                 akey = [keyPathArray objectAtIndex:1];
                 if (!akey) {
-                    return;
+                    return NO;
                 }
                 NSString *setterKey = [NSString stringWithFormat:@"set%@:",[akey capitalizedString]];
                 if (![data respondsToSelector:NSSelectorFromString(akey)] ||
                     ![data respondsToSelector:NSSelectorFromString(setterKey)]) {
-                    return;
+                    return NO;
                 }
                 if (i == keyPathArray.count - 2) {
                     data = [data valueForKey:akey];
                 }
             }
         }
-        
-        helper = [[MLNKVObserverHelper alloc] initWithTargetObject:data keyPath:akey];
-        [helper addObserver:observer];
-        pthread_mutex_lock(&_lock);
-        [self.dataMap setValue:helper forKey:keyPath];
-        pthread_mutex_unlock(&_lock);
+        *retData = data;
+        *retKey = akey;
+        return YES;
     }
+    return NO;
 }
 
 @end

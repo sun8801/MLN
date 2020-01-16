@@ -20,9 +20,16 @@
     [kitViewController addDataObserver:observer forKeyPath:keyPath];
 }
 
++ (void)lua_updateDataForKeyPath:(NSString *)keyPath value:(id)value
+{
+    MLNKitViewController *kitViewController = (MLNKitViewController *)MLN_KIT_INSTANCE([self mln_currentLuaCore]).viewController;
+    [kitViewController updateDataForKeyPath:keyPath value:value];
+}
+
 #pragma mark - Setup For Lua
 LUA_EXPORT_STATIC_BEGIN(MLNDataBinding)
 LUA_EXPORT_STATIC_METHOD(bind, "lua_bindDataForKeyPath:handler:", MLNDataBinding)
+LUA_EXPORT_STATIC_METHOD(update, "lua_updateDataForKeyPath:value:", MLNDataBinding)
 LUA_EXPORT_STATIC_END(MLNDataBinding, DataBinding, NO, NULL)
 
 @end

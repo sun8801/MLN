@@ -161,9 +161,17 @@ NS_ASSUME_NONNULL_BEGIN
 模型数据绑定
 
 @param data 要绑定的数据
-@param key 访问数据的key
+@param key 访问数据的Key
 */
 - (void)bindData:(NSObject *)data key:(NSString *)key;
+
+/**
+更新绑定的模型数据
+
+@param keyPath 访问数据的Key
+@param value 要更新的数据
+*/
+- (void)updateDataForKeyPath:(NSString *)keyPath value:(id)value;
 
 /**
 监听数据变化

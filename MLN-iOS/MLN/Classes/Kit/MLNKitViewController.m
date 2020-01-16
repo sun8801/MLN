@@ -194,6 +194,11 @@
     [self.dataBinding bindData:data key:key];
 }
 
+- (void)updateDataForKeyPath:(NSString *)keyPath value:(id)value
+{
+    [self.dataBinding updateDataForKeyPath:keyPath value:value];
+}
+
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath
 {
     [self.dataBinding addDataObserver:observer forKeyPath:keyPath];

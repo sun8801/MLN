@@ -657,6 +657,11 @@
     return YES;
 }
 
+- (NSObject *)observableObject
+{
+    return self.internalTextView;
+}
+
 #pragma mark - Export For Lua
 LUA_EXPORT_VIEW_BEGIN(MLNEditTextView)
 LUA_EXPORT_VIEW_PROPERTY(placeholder, "setPlaceholder:","placeholder", MLNEditTextView)

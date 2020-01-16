@@ -54,12 +54,13 @@
     self.model.text = @"hello world!";
     
     self.luaShow = [[MLNHotReloadViewController alloc] init];
-    self.luaShow.view.frame = CGRectMake(20, 20, 200, 120);
+    self.luaShow.view.frame = CGRectMake(20, 20, 320, 200);
     [self addChildViewController:self.luaShow];
     [self.view addSubview:self.luaShow.view];
     [self.luaShow didMoveToParentViewController:self];
     
     [self.luaShow bindData:self.model key:@"userData"];
+    MLNLabel *myLabel = (MLNLabel *)[self.luaShow findViewById:@"label"];
 }
 
 - (void)viewWillAppear:(BOOL)animated {

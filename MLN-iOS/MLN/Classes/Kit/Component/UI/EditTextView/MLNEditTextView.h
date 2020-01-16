@@ -8,10 +8,11 @@
 #import <UIKit/UIKit.h>
 #import "MLNEditTextViewConst.h"
 #import "MLNEntityExportProtocol.h"
+#import "MLNKVObservableProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface MLNEditTextView : UIView <MLNEntityExportProtocol, UIResponderStandardEditActions>
+@interface MLNEditTextView : UIView <MLNEntityExportProtocol, UIResponderStandardEditActions, MLNKVObservableProtocol>
 
 @property (nonatomic, strong) UIImageView *backgroundImageView;
 @property (nonatomic, assign) UIEdgeInsets padding;
