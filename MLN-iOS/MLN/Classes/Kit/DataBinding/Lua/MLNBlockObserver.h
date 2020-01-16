@@ -7,12 +7,12 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MLNKVObserverProtocol.h"
+#import "MLNBaseLiveKVObserver.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class MLNBlock;
-@interface MLNBlockObserver : NSObject <MLNKVObserverProtocol>
+@interface MLNBlockObserver : MLNBaseLiveKVObserver
 
 @property (nonatomic, strong, readonly) MLNBlock *block;
 

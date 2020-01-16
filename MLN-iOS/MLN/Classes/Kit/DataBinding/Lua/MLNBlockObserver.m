@@ -19,7 +19,7 @@
     return self;
 }
 
-- (void)notify:(NSString *)keyPath newValue:(id)newValue oldValue:(id)oldValue
+- (void)notifyLiveForKeyPath:(NSString *)keyPath newValue:(id)newValue oldValue:(id)oldValue
 {
     [self.block addObjArgument:newValue];
     [self.block addObjArgument:oldValue];
