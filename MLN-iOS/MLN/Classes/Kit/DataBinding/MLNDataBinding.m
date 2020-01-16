@@ -8,14 +8,14 @@
 
 #import "MLNDataBinding.h"
 #import "MLNKVObserverHelper.h"
-#import "MLNBlockObserver.h"
-#import "MLNStaticExporterMacro.h"
-#import "MLNKitHeader.h"
-#import "MLNKitViewController.h"
+#import <pthread.h>
 
-@interface MLNDataBinding ()
+@interface MLNDataBinding () {
+    pthread_mutex_t _lock;
+}
 
 @property (nonatomic, strong) NSMutableDictionary *dataMap;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, MLNKVObserverHelper *> *observerHelperMap;
 
 @end
 @implementation MLNDataBinding
@@ -24,38 +24,70 @@
 {
     if (self = [super init]) {
         _dataMap = [NSMutableDictionary dictionary];
+        _observerHelperMap = [NSMutableDictionary dictionary];
+        pthread_mutex_init(&_lock, NULL);
     }
     return self;
 }
 
-- (void)bindData:(NSObject *)data key:(NSString *)key
+- (void)dealloc
 {
-    [self.dataMap setObject:data forKey:key];
+    pthread_mutex_destroy(&_lock);
 }
 
-- (void)addObserverForKeyPath:(NSString *)keyPath handler:(MLNBlock *)handler
+- (void)bindData:(NSObject *)data key:(NSString *)key
 {
+    pthread_mutex_lock(&_lock);
+    [self.dataMap setObject:data forKey:key];
+    pthread_mutex_unlock(&_lock);
+}
+
+- (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath
+{
+    NSParameterAssert(keyPath);
+    NSParameterAssert(observer);
+    if (!keyPath || !observer) {
+        return;
+    }
+    // cache
+    pthread_mutex_lock(&_lock);
+    MLNKVObserverHelper *helper = [self.observerHelperMap objectForKey:keyPath];
+    pthread_mutex_unlock(&_lock);
+    if (helper) {
+        [helper addObserver:observer];
+        return;
+    }
+    // new
     NSArray<NSString *> *keyPathArray = [keyPath componentsSeparatedByString:@"."];
     if (keyPathArray.count > 1) {
         NSString *firstKey = keyPathArray.firstObject;
-        NSObject *data = [self.dataMap objectForKey:firstKey];
-        NSString *secondKey = [keyPathArray objectAtIndex:1];
-        MLNKVObserverHelper *helper = [[MLNKVObserverHelper alloc] initWithTargetObject:data keyPath:secondKey];
-        NSObject<MLNKVObserverProtocol> *obs = [[MLNBlockObserver alloc] initWithBloclk:handler];
-        [helper addObserver:obs];
-        [_dataMap setValue:helper forKey:keyPath];
+        pthread_mutex_lock(&_lock);
+        id data = [self.dataMap objectForKey:firstKey];
+        pthread_mutex_unlock(&_lock);
+        NSString *akey = nil;
+        if (data) {
+            for (int i = 1; i < keyPathArray.count; i++) {
+                akey = [keyPathArray objectAtIndex:1];
+                if (!akey) {
+                    return;
+                }
+                NSString *setterKey = [NSString stringWithFormat:@"set%@:",[akey capitalizedString]];
+                if (![data respondsToSelector:NSSelectorFromString(akey)] ||
+                    ![data respondsToSelector:NSSelectorFromString(setterKey)]) {
+                    return;
+                }
+                if (i == keyPathArray.count - 2) {
+                    data = [data valueForKey:akey];
+                }
+            }
+        }
+        
+        helper = [[MLNKVObserverHelper alloc] initWithTargetObject:data keyPath:akey];
+        [helper addObserver:observer];
+        pthread_mutex_lock(&_lock);
+        [self.dataMap setValue:helper forKey:keyPath];
+        pthread_mutex_unlock(&_lock);
     }
 }
-
-+ (void)lua_bindDataForKeyPath:(NSString *)keyPath handler:(MLNBlock *)handler
-{
-    MLNKitViewController *vc = (MLNKitViewController *)MLN_KIT_INSTANCE([self mln_currentLuaCore]).viewController;
-    [vc.dataBinding addObserverForKeyPath:keyPath handler:handler];
-}
-
-#pragma mark - Setup For Lua
-LUA_EXPORT_STATIC_BEGIN(MLNDataBinding)
-LUA_EXPORT_STATIC_METHOD(bind, "lua_bindDataForKeyPath:handler:", MLNDataBinding)
-LUA_EXPORT_STATIC_END(MLNDataBinding, DataBinding, NO, NULL)
 
 @end

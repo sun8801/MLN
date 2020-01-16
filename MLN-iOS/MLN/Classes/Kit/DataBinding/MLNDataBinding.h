@@ -7,14 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MLNStaticExportProtocol.h"
+#import "MLNKVObserverProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
-@class MLNBlock;
-@interface MLNDataBinding : NSObject <MLNStaticExportProtocol>
+@interface MLNDataBinding : NSObject
 
 - (void)bindData:(NSObject *)data key:(NSString *)key;
-- (void)addObserverForKeyPath:(NSString *)keyPath handler:(MLNBlock *)handler;
+- (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath;
 
 @end
 

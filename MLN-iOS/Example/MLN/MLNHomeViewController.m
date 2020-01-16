@@ -59,7 +59,7 @@
     [self.view addSubview:self.luaShow.view];
     [self.luaShow didMoveToParentViewController:self];
     
-    [self.luaShow.dataBinding bindData:self.model key:@"userData"];
+    [self.luaShow bindData:self.model key:@"userData"];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -84,7 +84,7 @@
 //    MLNHotReloadViewController  *hotReloadVC = [[MLNHotReloadViewController alloc] initWithRegisterClasses:@[[MLNStaticTest class]] extraInfo:nil];
 //    [self.navigationController pushViewController:hotReloadVC animated:YES];
     
-//    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
+    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
 //    label.adapter = self;
 //    [label lua_reloadData];
     

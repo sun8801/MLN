@@ -9,21 +9,19 @@
 #import "MLNViewControllerProtocol.h"
 #import "MLNKitViewControllerDelegate.h"
 #import "MLNExportProtocol.h"
+#import "MLNKVObserverProtocol.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class MLNKitInstance;
 @class MLNKitInstanceHandlersManager;
 @class MLNLuaBundle;
-@class MLNDataBinding;
 /**
  提供一个默认的包含MLNKitInstance的视图控制器
  */
 @interface MLNKitViewController : UIViewController <MLNViewControllerProtocol> {
 @protected MLNKitInstance *_kitInstance;
 }
-
-@property (nonatomic, strong) MLNDataBinding *dataBinding;
 
 /**
  当前KitInstance
@@ -147,6 +145,33 @@ NS_ASSUME_NONNULL_BEGIN
  @return 是否成功
  */
 - (BOOL)regClasses:(NSArray<Class<MLNExportProtocol>> *)registerClasses;
+
+@end
+
+@interface MLNKitViewController (DataBinding)
+
+/**
+通过id获取视图
+
+@param identifier 视图对应的id
+*/
+- (UIView *)findViewById:(NSString *)identifier;
+
+/**
+模型数据绑定
+
+@param data 要绑定的数据
+@param key 访问数据的key
+*/
+- (void)bindData:(NSObject *)data key:(NSString *)key;
+
+/**
+监听数据变化
+
+@param observer 监听者
+@param keyPath 访问数据的key
+*/
+- (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath;
 
 @end
 

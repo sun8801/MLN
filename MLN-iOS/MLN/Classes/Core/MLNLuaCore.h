@@ -145,6 +145,33 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)call:(int)numberOfArgs error:(NSError **__nullable)error;
 
 /**
+ 创建元表
+
+ @param name 元表名称
+ @param error 错误信息
+ @return 创建是否成功
+ */
+- (BOOL)createMetaTable:(const char *)name error:(NSError ** __nullable)error;
+
+/**
+ 变更lua bundle环境
+
+ @param bundlePath lua bundle的全路径
+ */
+- (void)changeLuaBundleWithPath:(NSString *)bundlePath;
+
+/**
+ 变更lua bundle环境
+
+ @param bundle 新的lua bundle
+ */
+- (void)changeLuaBundle:(MLNLuaBundle *)bundle;
+
+@end
+
+@interface MLNLuaCore (Register)
+
+/**
  注册lib到状态机
 
  @param libName lib的名称
@@ -225,89 +252,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return 注册是否成功
  */
 - (BOOL)registerGlobalVar:(id)value globalName:(NSString *)globalName error:(NSError ** __nullable)error;
-
-/**
- 创建元表
-
- @param name 元表名称
- @param error 错误信息
- @return 创建是否成功
- */
-- (BOOL)createMetaTable:(const char *)name error:(NSError ** __nullable)error;
-
-/**
- 变更lua bundle环境
-
- @param bundlePath lua bundle的全路径
- */
-- (void)changeLuaBundleWithPath:(NSString *)bundlePath;
-
-/**
- 变更lua bundle环境
-
- @param bundle 新的lua bundle
- */
-- (void)changeLuaBundle:(MLNLuaBundle *)bundle;
-
-/**
- 强引用对象
- 
- @param objIndex 被强引用的对象在栈上的索引
- @param key 关联的key
- */
-- (void)setStrongObjectWithIndex:(int)objIndex key:(NSString *)key;
-
-/**
- 强引用对象
-
- @param objIndex 被强引用的对象在栈上的索引
- @param cKey 关联的key
- */
-- (void)setStrongObjectWithIndex:(int)objIndex cKey:(void *)cKey;
-
-/**
- 强引用对象
- 
- @param obj 被强引用的对象
- @param key 关联的key
- */
-- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj key:(NSString *)key;
-
-/**
- 强引用对象
- 
- @param obj 被强引用的对象
- @param cKey 关联的key
- */
-- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj cKey:(void *)cKey;
-
-/**
- 移除强引用对象
- 
- @param key 关联的key
- */
-- (void)removeStrongObject:(NSString *)key;
-
-/**
- 移除强引用对象
- 
- @param cKey 关联的key
- */
-- (void)removeStrongObjectForCKey:(void *)cKey;
-
-/**
- 将对应强引用对象压入栈顶
- 
- @param key 关联的key
- */
-- (BOOL)pushStrongObject:(NSString *)key;
-
-/**
- 将对应强引用对象压入栈顶
- 
- @param cKey 关联的key
- */
-- (BOOL)pushStrongObjectForCKey:(void *)cKey;
 
 @end
 
@@ -425,6 +369,66 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface MLNLuaCore (GC)
+
+/**
+ 强引用对象
+ 
+ @param objIndex 被强引用的对象在栈上的索引
+ @param key 关联的key
+ */
+- (void)setStrongObjectWithIndex:(int)objIndex key:(NSString *)key;
+
+/**
+ 强引用对象
+
+ @param objIndex 被强引用的对象在栈上的索引
+ @param cKey 关联的key
+ */
+- (void)setStrongObjectWithIndex:(int)objIndex cKey:(void *)cKey;
+
+/**
+ 强引用对象
+ 
+ @param obj 被强引用的对象
+ @param key 关联的key
+ */
+- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj key:(NSString *)key;
+
+/**
+ 强引用对象
+ 
+ @param obj 被强引用的对象
+ @param cKey 关联的key
+ */
+- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj cKey:(void *)cKey;
+
+/**
+ 移除强引用对象
+ 
+ @param key 关联的key
+ */
+- (void)removeStrongObject:(NSString *)key;
+
+/**
+ 移除强引用对象
+ 
+ @param cKey 关联的key
+ */
+- (void)removeStrongObjectForCKey:(void *)cKey;
+
+/**
+ 将对应强引用对象压入栈顶
+ 
+ @param key 关联的key
+ */
+- (BOOL)pushStrongObject:(NSString *)key;
+
+/**
+ 将对应强引用对象压入栈顶
+ 
+ @param cKey 关联的key
+ */
+- (BOOL)pushStrongObjectForCKey:(void *)cKey;
 
 /**
  手动执行一次GC

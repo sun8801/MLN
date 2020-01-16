@@ -71,7 +71,7 @@
 #import "mmoslib.h"
 #import "MLNCornerUtil.h"
 #import "MLNSafeAreaAdapter.h"
-#import "MLNDataBinding.h"
+#import "MLNDataBinding+MLNKit.h"
 // Animations
 #import "MLNAnimator.h"
 #import "MLNAnimation.h"

@@ -55,6 +55,237 @@ static int mln_errorFunc_traceback (lua_State *L) {
 
 @end
 
+@implementation MLNLuaCore (Register)
+
+- (BOOL)openCLib:(const char *)libName methodList:(const luaL_Reg *)list nup:(int)nup error:(NSError * _Nullable __autoreleasing *)error
+{
+    lua_State *L = self.state;
+    if (!L) {
+        if (error) {
+            *error = [NSError mln_errorState:@"Lua state is released"];
+            MLNError(self, @"Lua state is released");
+        }
+        return NO;
+    }
+    luaL_openlib(L, libName, list, nup);
+    return YES;
+}
+
+- (BOOL)openLib:(const char *)libName nativeClassName:(const char *)nativeClassName methodList:(const struct mln_objc_method *)list nup:(int)nup error:(NSError **)error
+{
+    lua_State *L = self.state;
+    if (!L) {
+        if (error) {
+            *error = [NSError mln_errorState:@"Lua state is released"];
+            MLNError(self, @"Lua state is released");
+        }
+        return NO;
+    }
+    if (libName) {
+        int size = mln_libsize(list);
+        /* check whether lib already exists */
+        luaL_findtable(L, LUA_REGISTRYINDEX, "_LOADED", 1);
+        lua_getfield(L, -1, libName);  /* get _LOADED[libname] */
+        if (!lua_istable(L, -1)) {  /* not found? */
+            lua_pop(L, 1);  /* remove previous result */
+            /* try global variable (and create one if it does not exist) */
+            if (luaL_findtable(L, LUA_GLOBALSINDEX, libName, size) != NULL)
+                luaL_error(L, "name conflict for module " LUA_QS, libName);
+            lua_pushvalue(L, -1);
+            lua_setfield(L, -3, libName);  /* _LOADED[libname] = new table */
+        }
+        lua_remove(L, -2);  /* remove _LOADED table */
+        lua_insert(L, -(nup+1));  /* move library table to below upvalues */
+    }
+    for (; list->l_mn; list++) {
+        if (!charpNotEmpty(list->clz)) {
+            if (error) {
+                *error = [NSError mln_errorOpenLib:@"The class name must not be nil!"];
+                mln_lua_error(L, @"The class name must not be nil!");
+            }
+            return NO;
+        }
+        if (list->func == NULL) {
+            if (error) {
+                *error = [NSError mln_errorOpenLib:@"The C function must not be NULL!"];
+                mln_lua_error(L, @"The C function must not be NULL!");
+            }
+            return NO;
+        }
+        int extraCount = 0;
+        lua_pushstring(L, nativeClassName); // class
+        lua_pushboolean(L, list->isProperty);
+        if (list->isProperty) {
+            lua_pushstring(L, list->setter_n); // setter
+            lua_pushstring(L, list->getter_n); // getter
+            extraCount = 4;
+        } else {
+            lua_pushstring(L, list->mn); // selector
+            extraCount = 3;
+        }
+        int i;
+        for (i=0; i<nup; i++)  /* copy upvalues to the top */
+            lua_pushvalue(L, -(nup+extraCount));
+        lua_pushcclosure(L, list->func, (nup+extraCount));
+        lua_setfield(L, -(nup+2), list->l_mn);
+    }
+    lua_pop(L, nup);  /* remove upvalues */
+    return YES;
+}
+
+- (BOOL)registerClazz:(Class<MLNExportProtocol>)clazz error:(NSError **)error
+{
+    NSParameterAssert(clazz);
+    return [self.exporter exportClass:clazz error:error];
+}
+
+- (BOOL)registerClasses:(NSArray<Class<MLNExportProtocol>> *)classes error:(NSError **)error
+{
+    NSParameterAssert(classes && classes.count >0);
+    NSArray<Class<MLNExportProtocol>> *classesCopy = classes.copy;
+    for (Class<MLNExportProtocol> clazz in classesCopy) {
+        BOOL ret = [self.exporter exportClass:clazz error:error];
+        if (!ret) {
+            MLNError(self, @"%@", *error);
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (BOOL)registerGlobalFunc:(mln_lua_CFunction)cfunc name:(const char *)name error:(NSError * _Nullable __autoreleasing *)error
+{
+    return [self registerGlobalFunc:cfunc name:name nup:0 error:error];
+}
+
+- (BOOL)registerGlobalFunc:(mln_lua_CFunction)cfunc name:(const char *)name nup:(int)nup error:(NSError * _Nullable __autoreleasing *)error
+{
+    NSParameterAssert(charpNotEmpty(name));
+    lua_State *L = self.state;
+    if (!L) {
+        if (error) {
+            *error = [NSError mln_errorState:@"Lua state is released"];
+        }
+        return NO;
+    }
+    lua_checkstack(L, 12);
+    lua_pushcclosure(L, cfunc, nup);
+    lua_setglobal(L, name);
+    return YES;
+}
+
+- (BOOL)registerGlobalFunc:(const char *)packageName libname:(const char *)libname methodList:(const struct mln_objc_method *)list nup:(int)nup error:(NSError **)error
+{
+    NSParameterAssert(charpNotEmpty(packageName));
+    NSParameterAssert(charpNotEmpty(libname));
+    lua_State *L = self.state;
+    if (!L) {
+        if (error) {
+            *error = [NSError mln_errorState:@"Lua state is released"];
+        }
+        return NO;
+    }
+    BOOL needSetGlobal = YES;
+    if (strcmp(packageName, "NULL") != 0) {
+        lua_getglobal(L, packageName);
+        if (!lua_istable(L, -1)) {
+            lua_newtable(L);
+            lua_pushvalue(L, -1);
+            lua_setglobal(L, libname);
+        }
+    }
+    if (strcmp(packageName, "NULL") != 0) {
+        needSetGlobal = NO;
+        if (!lua_istable(L, -1)) {
+            lua_getglobal(L, libname);
+            if (!lua_istable(L, -1)) {
+                lua_newtable(L);
+                lua_pushvalue(L, -1);
+                lua_setglobal(L, libname);
+            }
+        } else {
+            lua_getfield(L, 1, libname);
+            if (!lua_istable(L, -1)) {
+                lua_newtable(L);
+                lua_pushstring(L, libname);
+                lua_pushvalue(L, -2);
+                lua_settable(L, -4);
+            }
+            lua_remove(L, -2);
+        }
+    }
+    
+    for (; list->l_mn; list++) {
+        if (!charpNotEmpty(list->clz)) {
+            if (error) {
+                *error = [NSError mln_errorOpenLib:@"The class name must not be nil!"];
+                mln_lua_error(L, @"The class name must not be nil!");
+            }
+            return NO;
+        }
+        if (list->func == NULL) {
+            if (error) {
+                *error = [NSError mln_errorOpenLib:@"The C function must not be NULL!"];
+                mln_lua_error(L, @"The C function must not be NULL!");
+            }
+            return NO;
+        }
+        int extraCount = 0;
+        lua_pushstring(L, list->clz); // class
+        lua_pushboolean(L, list->isProperty);
+        if (list->isProperty) {
+            lua_pushstring(L, list->setter_n); // setter
+            lua_pushstring(L, list->getter_n); // getter
+            extraCount = 4;
+        } else {
+            lua_pushstring(L, list->mn); // selector
+            extraCount = 3;
+        }
+        int i;
+        for (i=0; i<nup; i++)  /* copy upvalues to the top */
+            lua_pushvalue(L, -(nup+extraCount));
+        lua_checkstack(L, 12);
+        if (needSetGlobal) {
+            lua_pushcclosure(L, list->func, (nup+extraCount));
+            lua_setglobal(L, list->l_mn);
+        } else {
+            lua_pushcclosure(L, list->func, (nup+extraCount));
+            if (strlen(list->l_mn) == 1) {
+                int number = atoi(list->l_mn);
+                lua_pushnumber(L, number);
+            } else {
+                lua_pushstring(L, list->mn);
+            }
+            lua_insert(L, -2);
+            lua_settable(L, -3);
+            lua_remove(L, -1);
+        }
+    }
+    lua_pop(L, nup);  /* remove upvalues */
+    return YES;
+}
+
+- (BOOL)registerGlobalVar:(id)value globalName:(NSString *)globalName error:(NSError * _Nullable __autoreleasing *)error
+{
+    NSParameterAssert(value);
+    NSParameterAssert(globalName && globalName.length > 0);
+    lua_State *L = self.state;
+    if (!L) {
+        if (error) {
+            *error = [NSError mln_errorState:@"Lua state is released"];
+            MLNError(self, @"Lua state is released");
+        }
+        return NO;
+    }
+    lua_checkstack(L, 12);
+    [self pushNativeObject:value error:error];
+    lua_setglobal(L, globalName.UTF8String);
+    return YES;
+}
+
+
+@end
+
 @implementation MLNLuaCore (Stack)
 
 - (int)pushNativeObject:(id)obj error:(NSError **)error
@@ -120,6 +351,46 @@ static int mln_errorFunc_traceback (lua_State *L) {
 @end
 
 @implementation MLNLuaCore (GC)
+
+- (void)setStrongObjectWithIndex:(int)objIndex key:(NSString *)key
+{
+    [self.objStrongTable setObjectWithIndex:objIndex key:key];
+}
+
+- (void)setStrongObjectWithIndex:(int)objIndex cKey:(void *)cKey
+{
+    [self.objStrongTable setObjectWithIndex:objIndex cKey:cKey];
+}
+
+- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj key:(NSString *)key
+{
+    [self.objStrongTable setObject:obj key:key];
+}
+
+- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj cKey:(void *)cKey
+{
+    [self.objStrongTable setObject:obj cKey:cKey];
+}
+
+- (void)removeStrongObject:(NSString *)key
+{
+    [self.objStrongTable removeObject:key];
+}
+
+- (void)removeStrongObjectForCKey:(void *)cKey
+{
+    [self.objStrongTable removeObjectForCKey:cKey];
+}
+
+- (BOOL)pushStrongObject:(NSString *)key
+{
+    return [self.objStrongTable pushObjectToLuaStack:key] != NSNotFound;
+}
+
+- (BOOL)pushStrongObjectForCKey:(void *)cKey
+{
+    return [self.objStrongTable pushObjectToLuaStackForCKey:cKey] != NSNotFound;
+}
 
 - (void)doGC
 {
@@ -376,232 +647,6 @@ static int mln_errorFunc_traceback (lua_State *L) {
     return YES;
 }
 
-- (BOOL)openCLib:(const char *)libName methodList:(const luaL_Reg *)list nup:(int)nup error:(NSError * _Nullable __autoreleasing *)error
-{
-    lua_State *L = self.state;
-    if (!L) {
-        if (error) {
-            *error = [NSError mln_errorState:@"Lua state is released"];
-            MLNError(self, @"Lua state is released");
-        }
-        return NO;
-    }
-    luaL_openlib(L, libName, list, nup);
-    return YES;
-}
-
-- (BOOL)openLib:(const char *)libName nativeClassName:(const char *)nativeClassName methodList:(const struct mln_objc_method *)list nup:(int)nup error:(NSError **)error
-{
-    lua_State *L = self.state;
-    if (!L) {
-        if (error) {
-            *error = [NSError mln_errorState:@"Lua state is released"];
-            MLNError(self, @"Lua state is released");
-        }
-        return NO;
-    }
-    if (libName) {
-        int size = mln_libsize(list);
-        /* check whether lib already exists */
-        luaL_findtable(L, LUA_REGISTRYINDEX, "_LOADED", 1);
-        lua_getfield(L, -1, libName);  /* get _LOADED[libname] */
-        if (!lua_istable(L, -1)) {  /* not found? */
-            lua_pop(L, 1);  /* remove previous result */
-            /* try global variable (and create one if it does not exist) */
-            if (luaL_findtable(L, LUA_GLOBALSINDEX, libName, size) != NULL)
-                luaL_error(L, "name conflict for module " LUA_QS, libName);
-            lua_pushvalue(L, -1);
-            lua_setfield(L, -3, libName);  /* _LOADED[libname] = new table */
-        }
-        lua_remove(L, -2);  /* remove _LOADED table */
-        lua_insert(L, -(nup+1));  /* move library table to below upvalues */
-    }
-    for (; list->l_mn; list++) {
-        if (!charpNotEmpty(list->clz)) {
-            if (error) {
-                *error = [NSError mln_errorOpenLib:@"The class name must not be nil!"];
-                mln_lua_error(L, @"The class name must not be nil!");
-            }
-            return NO;
-        }
-        if (list->func == NULL) {
-            if (error) {
-                *error = [NSError mln_errorOpenLib:@"The C function must not be NULL!"];
-                mln_lua_error(L, @"The C function must not be NULL!");
-            }
-            return NO;
-        }
-        int extraCount = 0;
-        lua_pushstring(L, nativeClassName); // class
-        lua_pushboolean(L, list->isProperty);
-        if (list->isProperty) {
-            lua_pushstring(L, list->setter_n); // setter
-            lua_pushstring(L, list->getter_n); // getter
-            extraCount = 4;
-        } else {
-            lua_pushstring(L, list->mn); // selector
-            extraCount = 3;
-        }
-        int i;
-        for (i=0; i<nup; i++)  /* copy upvalues to the top */
-            lua_pushvalue(L, -(nup+extraCount));
-        lua_pushcclosure(L, list->func, (nup+extraCount));
-        lua_setfield(L, -(nup+2), list->l_mn);
-    }
-    lua_pop(L, nup);  /* remove upvalues */
-    return YES;
-}
-
-- (BOOL)registerClazz:(Class<MLNExportProtocol>)clazz error:(NSError **)error
-{
-    NSParameterAssert(clazz);
-    return [self.exporter exportClass:clazz error:error];
-}
-
-- (BOOL)registerClasses:(NSArray<Class<MLNExportProtocol>> *)classes error:(NSError **)error
-{
-    NSParameterAssert(classes && classes.count >0);
-    NSArray<Class<MLNExportProtocol>> *classesCopy = classes.copy;
-    for (Class<MLNExportProtocol> clazz in classesCopy) {
-        BOOL ret = [self.exporter exportClass:clazz error:error];
-        if (!ret) {
-            MLNError(self, @"%@", *error);
-            return NO;
-        }
-    }
-    return YES;
-}
-
-- (BOOL)registerGlobalFunc:(mln_lua_CFunction)cfunc name:(const char *)name error:(NSError * _Nullable __autoreleasing *)error
-{
-    return [self registerGlobalFunc:cfunc name:name nup:0 error:error];
-}
-
-- (BOOL)registerGlobalFunc:(mln_lua_CFunction)cfunc name:(const char *)name nup:(int)nup error:(NSError * _Nullable __autoreleasing *)error
-{
-    NSParameterAssert(charpNotEmpty(name));
-    lua_State *L = self.state;
-    if (!L) {
-        if (error) {
-            *error = [NSError mln_errorState:@"Lua state is released"];
-        }
-        return NO;
-    }
-    lua_checkstack(L, 12);
-    lua_pushcclosure(L, cfunc, nup);
-    lua_setglobal(L, name);
-    return YES;
-}
-
-- (BOOL)registerGlobalFunc:(const char *)packageName libname:(const char *)libname methodList:(const struct mln_objc_method *)list nup:(int)nup error:(NSError **)error
-{
-    NSParameterAssert(charpNotEmpty(packageName));
-    NSParameterAssert(charpNotEmpty(libname));
-    lua_State *L = self.state;
-    if (!L) {
-        if (error) {
-            *error = [NSError mln_errorState:@"Lua state is released"];
-        }
-        return NO;
-    }
-    BOOL needSetGlobal = YES;
-    if (strcmp(packageName, "NULL") != 0) {
-        lua_getglobal(L, packageName);
-        if (!lua_istable(L, -1)) {
-            lua_newtable(L);
-            lua_pushvalue(L, -1);
-            lua_setglobal(L, libname);
-        }
-    }
-    if (strcmp(packageName, "NULL") != 0) {
-        needSetGlobal = NO;
-        if (!lua_istable(L, -1)) {
-            lua_getglobal(L, libname);
-            if (!lua_istable(L, -1)) {
-                lua_newtable(L);
-                lua_pushvalue(L, -1);
-                lua_setglobal(L, libname);
-            }
-        } else {
-            lua_getfield(L, 1, libname);
-            if (!lua_istable(L, -1)) {
-                lua_newtable(L);
-                lua_pushstring(L, libname);
-                lua_pushvalue(L, -2);
-                lua_settable(L, -4);
-            }
-            lua_remove(L, -2);
-        }
-    }
-    
-    for (; list->l_mn; list++) {
-        if (!charpNotEmpty(list->clz)) {
-            if (error) {
-                *error = [NSError mln_errorOpenLib:@"The class name must not be nil!"];
-                mln_lua_error(L, @"The class name must not be nil!");
-            }
-            return NO;
-        }
-        if (list->func == NULL) {
-            if (error) {
-                *error = [NSError mln_errorOpenLib:@"The C function must not be NULL!"];
-                mln_lua_error(L, @"The C function must not be NULL!");
-            }
-            return NO;
-        }
-        int extraCount = 0;
-        lua_pushstring(L, list->clz); // class
-        lua_pushboolean(L, list->isProperty);
-        if (list->isProperty) {
-            lua_pushstring(L, list->setter_n); // setter
-            lua_pushstring(L, list->getter_n); // getter
-            extraCount = 4;
-        } else {
-            lua_pushstring(L, list->mn); // selector
-            extraCount = 3;
-        }
-        int i;
-        for (i=0; i<nup; i++)  /* copy upvalues to the top */
-            lua_pushvalue(L, -(nup+extraCount));
-        lua_checkstack(L, 12);
-        if (needSetGlobal) {
-            lua_pushcclosure(L, list->func, (nup+extraCount));
-            lua_setglobal(L, list->l_mn);
-        } else {
-            lua_pushcclosure(L, list->func, (nup+extraCount));
-            if (strlen(list->l_mn) == 1) {
-                int number = atoi(list->l_mn);
-                lua_pushnumber(L, number);
-            } else {
-                lua_pushstring(L, list->mn);
-            }
-            lua_insert(L, -2);
-            lua_settable(L, -3);
-            lua_remove(L, -1);
-        }
-    }
-    lua_pop(L, nup);  /* remove upvalues */
-    return YES;
-}
-
-- (BOOL)registerGlobalVar:(id)value globalName:(NSString *)globalName error:(NSError * _Nullable __autoreleasing *)error
-{
-    NSParameterAssert(value);
-    NSParameterAssert(globalName && globalName.length > 0);
-    lua_State *L = self.state;
-    if (!L) {
-        if (error) {
-            *error = [NSError mln_errorState:@"Lua state is released"];
-            MLNError(self, @"Lua state is released");
-        }
-        return NO;
-    }
-    lua_checkstack(L, 12);
-    [self pushNativeObject:value error:error];
-    lua_setglobal(L, globalName.UTF8String);
-    return YES;
-}
-
 - (BOOL)createMetaTable:(const char *)name error:(NSError * _Nullable __autoreleasing *)error
 {
     NSParameterAssert(charpNotEmpty(name));
@@ -628,46 +673,6 @@ static int mln_errorFunc_traceback (lua_State *L) {
 - (void)changeLuaBundle:(MLNLuaBundle *)bundle
 {
     _currentBundle = bundle;
-}
-
-- (void)setStrongObjectWithIndex:(int)objIndex key:(NSString *)key
-{
-    [self.objStrongTable setObjectWithIndex:objIndex key:key];
-}
-
-- (void)setStrongObjectWithIndex:(int)objIndex cKey:(void *)cKey
-{
-    [self.objStrongTable setObjectWithIndex:objIndex cKey:cKey];
-}
-
-- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj key:(NSString *)key
-{
-    [self.objStrongTable setObject:obj key:key];
-}
-
-- (void)setStrongObject:(id<MLNEntityExportProtocol>)obj cKey:(void *)cKey
-{
-    [self.objStrongTable setObject:obj cKey:cKey];
-}
-
-- (void)removeStrongObject:(NSString *)key
-{
-    [self.objStrongTable removeObject:key];
-}
-
-- (void)removeStrongObjectForCKey:(void *)cKey
-{
-    [self.objStrongTable removeObjectForCKey:cKey];
-}
-
-- (BOOL)pushStrongObject:(NSString *)key
-{
-    return [self.objStrongTable pushObjectToLuaStack:key] != NSNotFound;
-}
-
-- (BOOL)pushStrongObjectForCKey:(void *)cKey
-{
-    return [self.objStrongTable pushObjectToLuaStackForCKey:cKey] != NSNotFound;
 }
 
 #pragma mark - 私有方法

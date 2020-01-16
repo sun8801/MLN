@@ -66,7 +66,7 @@
             }
         } else {
             dispatch_async(dispatch_get_main_queue(), ^{
-                for (NSObject<MLNKVObserverProtocol> *obs in _obsMSet) {
+                for (NSObject<MLNKVObserverProtocol> *obs in self->_obsMSet) {
                     [obs notify:keyPath newValue:newValue oldValue:oldValue];
                 }
             });
