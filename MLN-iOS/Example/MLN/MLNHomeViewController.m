@@ -47,8 +47,8 @@
 
 @implementation MLNHomeViewController
 
-MLN_IMPORT_LUA_VIEW(self.luaShow, label)
-MLN_IMPORT_LUA_VIEW_WITH_ALIAS(self.luaShow, switch, mySwitch)
+MLN_VIEW_IMPORT(self.luaShow, label)
+MLN_VIEW_IMPORT_WITH_ALIAS(self.luaShow, switch, mySwitch)
 
 - (void)viewDidLoad {
     [super viewDidLoad];
