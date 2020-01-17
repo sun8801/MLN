@@ -47,6 +47,9 @@
 
 @implementation MLNHomeViewController
 
+MLN_IMPORT_LUA_VIEW(self.luaShow, label)
+MLN_IMPORT_LUA_VIEW_WITH_ALIAS(self.luaShow, switch, mySwitch)
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
@@ -89,11 +92,14 @@
 //    [label lua_reloadData];
     
     self.model.text = @"热重载";
+    self.label.backgroundColor = [UIColor redColor];
+    self.mySwitch.backgroundColor = [UIColor redColor];
 }
 
 - (IBAction)demoListButtonAction:(id)sender {
     MLNDemoListViewController *listVC = [[MLNDemoListViewController alloc] init];
     listVC.model = self.model;
+    self.label.backgroundColor = [UIColor yellowColor];
     [self.navigationController pushViewController:listVC animated:YES];
 //     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
 //    label.adapter = self;
@@ -108,6 +114,7 @@
 //    label.adapter = self;
 //    [label lua_reloadData];
     self.model.text = @"Demo工程";
+    self.label.backgroundColor = [UIColor blueColor];
 }
 
 @synthesize collectionView;

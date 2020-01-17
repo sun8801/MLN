@@ -185,10 +185,36 @@ NS_ASSUME_NONNULL_BEGIN
 监听数据变化
 
 @param observer 监听者
-@param keyPath 访问数据的key
+@param keyPath 访问数据的Key
 */
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath;
 
 @end
+
+/**
+声明访问某个Lua的视图
+
+@param LUA_VIEW_CONTROLLER  Lua所属的视图控制器
+@param VIEW_ID 访问视图的ID
+*/
+#define MLN_IMPORT_LUA_VIEW(LUA_VIEW_CONTROLLER, VIEW_ID)\
+- (UIView *)VIEW_ID\
+{\
+return [(LUA_VIEW_CONTROLLER) findViewById: @#VIEW_ID];\
+}
+
+/**
+声明访问某个Lua的视图,并声明别名。之后Native可以通过别名访问
+
+@param LUA_VIEW_CONTROLLER  Lua所属的视图控制器
+@param VIEW_ID 访问视图的ID
+@param VIEW_ALIAS 访问视图的别名
+*/
+#define MLN_IMPORT_LUA_VIEW_WITH_ALIAS(LUA_VIEW_CONTROLLER, VIEW_ID, VIEW_ALIAS)\
+- (UIView *)VIEW_ALIAS\
+{\
+return [(LUA_VIEW_CONTROLLER) findViewById: @#VIEW_ID];\
+}
+
 
 NS_ASSUME_NONNULL_END
