@@ -199,6 +199,11 @@
     [self.dataBinding updateDataForKeyPath:keyPath value:value];
 }
 
+- (id __nullable)dataForKeyPath:(NSString *)keyPath
+{
+    return [self.dataBinding dataForKeyPath:keyPath];
+}
+
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath
 {
     [self.dataBinding addDataObserver:observer forKeyPath:keyPath];

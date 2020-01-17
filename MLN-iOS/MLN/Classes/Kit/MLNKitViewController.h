@@ -174,6 +174,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)updateDataForKeyPath:(NSString *)keyPath value:(id)value;
 
 /**
+获取绑定的模型数据
+
+@param keyPath 访问数据的Key
+@return 对应的数据
+*/
+- (id __nullable)dataForKeyPath:(NSString *)keyPath;
+
+/**
 监听数据变化
 
 @param observer 监听者

@@ -52,6 +52,17 @@
     }
 }
 
+- (id __nullable)dataForKeyPath:(NSString *)keyPath
+{
+    id data = nil;
+    NSString *key = nil;
+    BOOL success = [self parseByKeyPath:keyPath retData:&data retKey:&key];
+    if (success) {
+        data = [data valueForKeyPath:key];
+    }
+    return data;
+}
+
 - (void)addDataObserver:(NSObject<MLNKVObserverProtocol> *)observer forKeyPath:(NSString *)keyPath
 {
     NSParameterAssert(keyPath);
