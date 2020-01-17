@@ -110,6 +110,7 @@
                     return NO;
                 }
                 // setter
+                // @note ⚠️ 这里的key要考虑是不是isXXX，或者对应的getter方法是不是isXXX类型
                 NSString *setterKey = [NSString stringWithFormat:@"set%@:",[akey capitalizedString]];
                 NSString *noIsSetterKey = nil;
                 if ([akey hasPrefix:@"is"]) {
