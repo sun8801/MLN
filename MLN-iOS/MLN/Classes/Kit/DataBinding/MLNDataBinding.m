@@ -109,9 +109,19 @@
                 if (!akey) {
                     return NO;
                 }
+                // setter
                 NSString *setterKey = [NSString stringWithFormat:@"set%@:",[akey capitalizedString]];
-                if (![data respondsToSelector:NSSelectorFromString(akey)] ||
-                    ![data respondsToSelector:NSSelectorFromString(setterKey)]) {
+                NSString *noIsSetterKey = nil;
+                if ([akey hasPrefix:@"is"]) {
+                    NSString *tmp = [akey substringWithRange:NSMakeRange(0, @"is".length)];
+                    noIsSetterKey = [NSString stringWithFormat:@"set%@:",[tmp capitalizedString]];
+                }
+                // getter
+                NSString *getterKey = [NSString stringWithFormat:@"is%@",[akey capitalizedString]];
+                if (!([data respondsToSelector:NSSelectorFromString(akey)] ||
+                      [data respondsToSelector:NSSelectorFromString(getterKey)]) ||
+                    !([data respondsToSelector:NSSelectorFromString(setterKey)] ||
+                      [data respondsToSelector:NSSelectorFromString(noIsSetterKey)])) {
                     return NO;
                 }
                 if (i == keyPathArray.count - 2) {

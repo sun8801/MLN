@@ -84,7 +84,7 @@
 //    MLNHotReloadViewController  *hotReloadVC = [[MLNHotReloadViewController alloc] initWithRegisterClasses:@[[MLNStaticTest class]] extraInfo:nil];
 //    [self.navigationController pushViewController:hotReloadVC animated:YES];
     
-    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
+//    MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
 //    label.adapter = self;
 //    [label lua_reloadData];
     
