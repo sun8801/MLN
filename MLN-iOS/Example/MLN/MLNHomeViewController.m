@@ -60,7 +60,6 @@
     [self.luaShow didMoveToParentViewController:self];
     
     [self.luaShow bindData:self.model key:@"userData"];
-    MLNLabel *myLabel = (MLNLabel *)[self.luaShow findViewById:@"label"];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -93,12 +92,13 @@
 }
 
 - (IBAction)demoListButtonAction:(id)sender {
-//    MLNDemoListViewController *listVC = [[MLNDemoListViewController alloc] init];
-//    [self.navigationController pushViewController:listVC animated:YES];
+    MLNDemoListViewController *listVC = [[MLNDemoListViewController alloc] init];
+    listVC.model = self.model;
+    [self.navigationController pushViewController:listVC animated:YES];
 //     MLNCollectionView *label = (MLNCollectionView *)[self.luaShow findViewById:@"collectionView"];
 //    label.adapter = self;
 //    [label lua_reloadData];
-    self.model.text = @"例子";
+//    self.model.text = @"例子";
 }
 
 - (IBAction)meilishuoButtonAction:(id)sender {

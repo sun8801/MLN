@@ -32,7 +32,6 @@
      pthread_mutex_destroy(&_lock);
 }
 
-@synthesize active = _active;
 - (void)setActive:(BOOL)active
 {
     _active = active;
@@ -42,6 +41,11 @@
         self.notifyLiveStickyBlock = nil;
         pthread_mutex_unlock(&_lock);
     }
+}
+
+- (BOOL)isActive
+{
+    return _active;
 }
 
 - (void)notify:(NSString *)keyPath newValue:(id)newValue oldValue:(id)oldValue

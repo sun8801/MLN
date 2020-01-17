@@ -64,10 +64,12 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     NSString *demoName = [self.demoArray objectAtIndex:indexPath.row];
-    MLNKitViewController *viewController = [[MLNKitViewController alloc] initWithEntryFilePath:demoName];
-    MLNLuaBundle *bundle = [MLNLuaBundle mainBundleWithPath:@"inner_demo.bundle"];
-    [viewController changeCurrentBundle:bundle];
-    [self.navigationController pushViewController:viewController animated:YES];
+    NSLog(@">>>>> update model: %@", demoName);
+    self.model.text = demoName;
+//    MLNKitViewController *viewController = [[MLNKitViewController alloc] initWithEntryFilePath:demoName];
+//    MLNLuaBundle *bundle = [MLNLuaBundle mainBundleWithPath:@"inner_demo.bundle"];
+//    [viewController changeCurrentBundle:bundle];
+//    [self.navigationController pushViewController:viewController animated:YES];
 }
 
 #pragma life cycle

@@ -7,10 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "MLNTestMe.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MLNDemoListViewController : UIViewController
+
+@property (nonatomic, strong) MLNTestMe *model;
 
 @end
 

@@ -10,8 +10,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface MLNBaseLiveKVObserver : NSObject <MLNLiveKVObserverProtocol>
-
+@interface MLNBaseLiveKVObserver : NSObject <MLNLiveKVObserverProtocol> {
+    @protected BOOL _active;
+}
 
 @end
 
