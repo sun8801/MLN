@@ -137,4 +137,14 @@
     return NO;
 }
 
+- (NSString *)dataKeyWithKeyPath:(NSString *)keyPath
+{
+    NSString *reg = @"^([_|a-z|A-Z][_|a-z|A-Z|0-9]*\\.)+";
+    NSRange rang = [keyPath rangeOfString:reg options:NSRegularExpressionSearch];
+    if (rang.location != NSNotFound) {
+        return [keyPath substringWithRange:rang];
+    }
+    return nil;
+}
+
 @end

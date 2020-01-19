@@ -201,6 +201,8 @@
 		307B68292752A1640D33AD93C5A584CE /* MLN_GCDAsyncUdpSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B61C39D8EFFFB1AC7892DD4C6FFF42F /* MLN_GCDAsyncUdpSocket.h */; settings = {ATTRIBUTES = (Project, ); }; };
 		307CC33A23D0774E0052DECD /* UIViewController+MLNKVO.h in Headers */ = {isa = PBXBuildFile; fileRef = 307CC33823D0774E0052DECD /* UIViewController+MLNKVO.h */; };
 		307CC33B23D0774E0052DECD /* UIViewController+MLNKVO.m in Sources */ = {isa = PBXBuildFile; fileRef = 307CC33923D0774E0052DECD /* UIViewController+MLNKVO.m */; };
+		3090DEF623D45188005F3CF3 /* MLNDataHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = 3090DEF423D45188005F3CF3 /* MLNDataHandler.h */; };
+		3090DEF723D45188005F3CF3 /* MLNDataHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 3090DEF523D45188005F3CF3 /* MLNDataHandler.m */; };
 		3093C5043008D9A194F77DD104FCE27F /* MLNSwitch.m in Sources */ = {isa = PBXBuildFile; fileRef = 134F63BC8216555AD96E6047F173316B /* MLNSwitch.m */; };
 		30A6398F5A3F95D43BEEBF5BE25AA7F9 /* MJRefreshBackFooter.h in Headers */ = {isa = PBXBuildFile; fileRef = 79746D1B013224BE099BFADF6918E8CE /* MJRefreshBackFooter.h */; settings = {ATTRIBUTES = (Project, ); }; };
 		30E9DB4DF86BC5CE1C1D77888FA7C014 /* NSMutableDictionary+MLNCore.h in Headers */ = {isa = PBXBuildFile; fileRef = AB848DC8AD35EE6AE4A006C76520FD48 /* NSMutableDictionary+MLNCore.h */; settings = {ATTRIBUTES = (Project, ); }; };
@@ -1425,6 +1427,8 @@
 		3013A99E3CC5B81446B5779568281261 /* mln_except.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = mln_except.h; sourceTree = "<group>"; };
 		307CC33823D0774E0052DECD /* UIViewController+MLNKVO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIViewController+MLNKVO.h"; sourceTree = "<group>"; };
 		307CC33923D0774E0052DECD /* UIViewController+MLNKVO.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+MLNKVO.m"; sourceTree = "<group>"; };
+		3090DEF423D45188005F3CF3 /* MLNDataHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MLNDataHandler.h; sourceTree = "<group>"; };
+		3090DEF523D45188005F3CF3 /* MLNDataHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MLNDataHandler.m; sourceTree = "<group>"; };
 		30A2825831F510E5156E1E3E066D5D2D /* MLNThread.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = MLNThread.h; sourceTree = "<group>"; };
 		30A9F430AB7F0A17328E0B3F9106B835 /* mln_inet.c */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.c; path = mln_inet.c; sourceTree = "<group>"; };
 		30AFCCB3B5329B135C2FD4E7D6ADE3E1 /* LNUsbTransporter.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = LNUsbTransporter.m; sourceTree = "<group>"; };
@@ -3960,6 +3964,8 @@
 			children = (
 				BF9AB9B4153AB9627F4C8CEF394230DA /* MLNDataBinding.h */,
 				41D2C08ED23AD62FBA1E1CD82844307F /* MLNDataBinding.m */,
+				3090DEF423D45188005F3CF3 /* MLNDataHandler.h */,
+				3090DEF523D45188005F3CF3 /* MLNDataHandler.m */,
 				471B4A179CC8A5C6A1AE0549BF0D5702 /* KVO */,
 				D9C7F6E49686C5B3251342BDC1E4CC98 /* Lua */,
 			);
@@ -5262,6 +5268,7 @@
 				E7946401AEEE5BD568BCEF445F045850 /* MLNSafeAreaAdapter.h in Headers */,
 				F972BB3771072D19B8CA98B427D9C28E /* MLNSafeAreaProxy.h in Headers */,
 				93DF18BB96C94F88FECB38291D771502 /* MLNSafeAreaViewProtocol.h in Headers */,
+				3090DEF623D45188005F3CF3 /* MLNDataHandler.h in Headers */,
 				023D1DEFFC5A27C55934122F6222D208 /* MLNScaleAnimation.h in Headers */,
 				E5DEA9FC0F49C1A4C19AAC42AA051AFA /* MLNScrollCallbackView.h in Headers */,
 				C457226E9C99C4C19DB4CBCA1299B9BC /* MLNScrollView.h in Headers */,
@@ -6274,6 +6281,7 @@
 				A0A9F86D56D0B0C2C69221769906F51C /* MLNAlert.m in Sources */,
 				BA8F302EE124C45070FE394A617B5A31 /* MLNAlphaAnimation.m in Sources */,
 				E0D17B5E6454BE189DE402E9D58D405C /* MLNAnimation.m in Sources */,
+				3090DEF723D45188005F3CF3 /* MLNDataHandler.m in Sources */,
 				362AC1EF0B6A66E4971BD69EBA159E6B /* MLNAnimationConst.m in Sources */,
 				CC92BEB81547A38C47BBD5C3677C8ABA /* MLNAnimationDelegate.m in Sources */,
 				219F47A0ECFF2D48207E351A3D351B04 /* MLNAnimationHandler.m in Sources */,
