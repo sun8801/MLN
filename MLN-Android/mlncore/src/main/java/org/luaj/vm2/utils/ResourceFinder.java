@@ -17,7 +17,7 @@ package org.luaj.vm2.utils;
 public interface ResourceFinder {
     /**
      * 预处理模块名称
-     * eg: return name.replaceAll("\\.", "/") + ".lua";
+     * eg: return StringReplaceUtils.replaceAllChar(name, '.', '/') + ".lua";
      *
      * @param name 名称中一般不带后缀，且文件夹用.表示
      *             eg: path.moduleA
@@ -47,4 +47,10 @@ public interface ResourceFinder {
      * @param name 名称
      */
     void afterContentUse(String name);
+
+    /**
+     * 若获取有错误，返回错误信息
+     * @return 可为空
+     */
+    String getError();
 }

@@ -135,6 +135,12 @@ public final class Globals extends LuaTable {
      */
     private Throwable error = null;
     /**
+     * require错误信息
+     * @see #__onLuaRequire(long, String)
+     * @see #onRequire
+     */
+    private StringBuilder requireErrorMsg = null;
+    /**
      * 资源寻找器，Lua脚本调用require时需要
      * 优先级比{@link #resourceFinders}高
      *
@@ -169,6 +175,10 @@ public final class Globals extends LuaTable {
      * 此虚拟机是否可debug
      */
     private boolean debuggable;
+    /**
+     * 此虚拟机是否已经加载了debug文件
+     */
+    private boolean debugOpened;
     /**
      * 创建线程
      */
@@ -446,14 +456,6 @@ public final class Globals extends LuaTable {
     }
 
     /**
-     * 获取native层全局java对象的个数
-     * @return 如果编译时，没有打开J_API_INFO编译选项，则返回为0
-     */
-    public static long globalObjectSize() {
-        return LuaCApi._globalObjectSize();
-    }
-
-    /**
      * 打印native层泄漏内存信息
      * 如果编译时，没有打开J_API_INFO编译选项，则不会有信息
      */
@@ -505,6 +507,16 @@ public final class Globals extends LuaTable {
     //<editor-fold desc="compile and execute">
 
     /**
+     * 开启debug
+     */
+    public final void openDebug() {
+        if (!debuggable) {
+            LuaCApi._openDebug(L_State);
+            debuggable = true;
+        }
+    }
+
+    /**
      * 是否由isolate 创建
      */
     public final boolean isIsolate() {
@@ -540,18 +552,6 @@ public final class Globals extends LuaTable {
     }
 
     /**
-     * 将通过{@link #preloadData(String, byte[])} 或 {@link #preloadFile(String, String)}
-     * 预加载的数据存储到文件中
-     * @param chunkname 预加载时传入的名称
-     * @param savePath  文件路径，必须保证父文件夹都存在
-     * @return true 成功，false 为进行预加载，或存储出错，可能抛出异常
-     */
-    public final boolean savePreloadData(String chunkname, String savePath) throws RuntimeException {
-        checkDestroy();
-        return LuaCApi._savePreloadData(L_State, savePath, chunkname) == LUA_OK;
-    }
-
-    /**
      * 打开调试
      * 需要在脚本未执行时打开，否则不生效
      * @param debug debug脚本
@@ -561,8 +561,10 @@ public final class Globals extends LuaTable {
      */
     public final boolean startDebug(byte[] debug, String ip, int port) {
         checkDestroy();
+        if (debugOpened)
+            return true;
         if (!debuggable) {
-            throw new IllegalStateException("cannot start debug in a lvm without debug state.");
+            openDebug();
         }
         try {
             state = LuaCApi._startDebug(L_State, debug, ip, port);
@@ -571,7 +573,8 @@ public final class Globals extends LuaTable {
             errorMsg = t.getMessage();
             state = LUA_ERRINJAVA;
         }
-        return state == LUA_OK;
+        debugOpened = state == LUA_OK;
+        return debugOpened;
     }
 
     /**
@@ -587,51 +590,7 @@ public final class Globals extends LuaTable {
     }
 
     /**
-     * 将lua源码编译成Lua二进制文件
-     * 底层将自动保存文件，
-     *
-     * @param file 保存的文件地址
-     * @param data lua源码
-     * @return 是否成功
-     * @note: 需要保证文件前的目录都存在
-     */
-    public final boolean compileAndSave(String file, String chunkName, byte[] data) {
-        checkDestroy();
-        try {
-            state = LuaCApi._compileAndSave(L_State, file, chunkName, data);
-        } catch (Throwable t) {
-            error = t;
-            errorMsg = t.getMessage();
-            state = LUA_ERRINJAVA;
-        }
-
-        return state == LUA_OK;
-    }
-
-    /**
-     * 将lua源码编译成Lua二进制文件
-     * 底层将自动保存文件，
-     *
-     * @param file 保存的文件地址
-     * @param path lua源码路径
-     * @return 是否成功
-     * @note: 需要保证文件前的目录都存在
-     */
-    public final boolean compileAndSave(String file, String path, String chunkName) {
-        checkDestroy();
-        try {
-            state = LuaCApi._compilePathAndSave(L_State, file, path, chunkName);
-        } catch (Throwable t) {
-            error = t;
-            errorMsg = t.getMessage();
-            state = LUA_ERRINJAVA;
-        }
-        return state == LUA_OK;
-    }
-
-    /**
      * 加载Lua源码或二进制码
-     * 二进制码必须由本机通过{@link #compileAndSave}编译
      * 其他机器编译出的二进制码不一定可用
      *
      * @param chunkName 名称
@@ -653,7 +612,6 @@ public final class Globals extends LuaTable {
 
     /**
      * 加载Lua源码或二进制码
-     * 二进制码必须由本机通过{@link #compileAndSave}编译
      * 其他机器编译出的二进制码不一定可用
      *
      * @param path 脚本绝对路径
@@ -674,7 +632,6 @@ public final class Globals extends LuaTable {
 
     /**
      * 加载Assets目录下，Lua源码或二进制码
-     * 二进制码必须由本机通过{@link #compileAndSave}编译
      * 其他机器编译出的二进制码不一定可用
      *
      * @param path 脚本绝对路径
@@ -737,7 +694,6 @@ public final class Globals extends LuaTable {
      * 若已通过
      *      {@link #loadString}
      *      {@link #loadData}
-     *      {@link #compileAndSave}
      *      {@link #setMainEntryFromPreload}
      * 加载成功，可通过此方法执行加载脚本，并返回执行状态
      *
@@ -767,7 +723,6 @@ public final class Globals extends LuaTable {
      * 若已通过
      *      {@link #loadString}
      *      {@link #loadData}
-     *      {@link #compileAndSave}
      *      {@link #setMainEntryFromPreload}
      * 加载成功，可通过此方法执行加载脚本，并返回执行状态
      * @return lua执行结果，可能为空
@@ -1034,6 +989,13 @@ public final class Globals extends LuaTable {
             resourceFinders.clear();
     }
     //</editor-fold>
+
+    /**
+     * 是否加载了debug脚本
+     */
+    public final boolean isDebugOpened() {
+        return debugOpened;
+    }
 
     /**
      * 设置是否正在使用中
@@ -1327,24 +1289,6 @@ public final class Globals extends LuaTable {
         }
         return false;
     }
-
-    /**
-     * 测试用
-     * 弹出当前栈顶num个数据
-     */
-    void pop(int num) {
-        checkDestroy();
-        LuaCApi._pop(L_State, num);
-    }
-
-    /**
-     * 测试用
-     * 弹出当前栈顶数据
-     */
-    void pop() {
-        checkDestroy();
-        LuaCApi._pop(L_State, 1);
-    }
     //</editor-fold>
 
     //<editor-fold desc="Table unsupported set get">
@@ -1386,6 +1330,16 @@ public final class Globals extends LuaTable {
     @LuaApiUsed
     private static Object __onLuaRequire(long L, String name) {
         return getGlobalsByLState(L).onRequire(name);
+    }
+
+    /**
+     * Lua脚本调用require时，获取错误信息
+     * @param L Lua虚拟机地址
+     * @return 可为空
+     */
+    @LuaApiUsed
+    private static String __getRequireError(long L) {
+        return getGlobalsByLState(L).getRequireErrorMsg();
     }
 
     /**
@@ -1434,18 +1388,40 @@ public final class Globals extends LuaTable {
      * @see #__onLuaRequire
      */
     private Object onRequire(String name) {
+        if (requireErrorMsg != null) {
+            requireErrorMsg.setLength(0);
+        }
         Object ret = findResource(resourceFinder, name);
         if (ret != null)
             return ret;
+        combineErrorMessage(resourceFinder);
         if (resourceFinders != null) {
             for (ResourceFinder rf : resourceFinders) {
                 ret = findResource(rf, name);
                 if (ret != null) {
                     return ret;
+                } else {
+                    combineErrorMessage(rf);
                 }
             }
         }
         return null;
+    }
+
+    private String getRequireErrorMsg() {
+        if (requireErrorMsg == null || requireErrorMsg.length() == 0)
+            return null;
+        return requireErrorMsg.toString();
+    }
+
+    private void combineErrorMessage(ResourceFinder rf) {
+        String error = rf.getError();
+        if (error == null || error.length() == 0)
+            return;
+        if (requireErrorMsg == null) {
+            requireErrorMsg = new StringBuilder();
+        }
+        requireErrorMsg.append("\n\t\t").append(error);
     }
 
     /**

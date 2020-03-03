@@ -49,6 +49,9 @@
     NSArray<MLNLayoutNode *> *subnodes_t = self.subnodes;
     for (NSUInteger i = 0; i < subnodes_t.count; i++) {
         MLNLayoutNode *subnode = subnodes_t[i];
+        if (subnode.isGone) {
+            continue;
+        }
         // need resize for match parent node
         if (subnode.widthType == MLNLayoutMeasurementTypeMatchParent ||
             subnode.heightType == MLNLayoutMeasurementTypeMatchParent) {
@@ -182,8 +185,10 @@
 - (void)requestLayout
 {
     if (self.isRoot) {
-        [self onMeasure];
-        [self onLayout];
+        if (self.isDirty) {
+            [self onMeasure];
+            [self onLayout];
+        }
     } else {
         [super requestLayout];
     }

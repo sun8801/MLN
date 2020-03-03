@@ -899,7 +899,7 @@ public abstract class UDBaseRecyclerAdapter<L extends UDBaseRecyclerLayout> exte
                 int[] sr = getSectionAndRowIn(holder.getLayoutPosition() - sc);
                 if (sr == null)
                     return;
-                delegate.invoke(varargsOf(holder.getCell(), LuaNumber.valueOf(sr[0]), LuaNumber.valueOf(sr[1])));
+                delegate.invoke(varargsOf(holder.getCell(), toLuaInt(sr[0]), toLuaInt(sr[1])));
             }
 
             return;
@@ -1004,7 +1004,14 @@ public abstract class UDBaseRecyclerAdapter<L extends UDBaseRecyclerLayout> exte
             return null;
         int sectionCount = 0;
         if (sectionCountDelegate != null && sectionCountDelegate.isFunction()) {
-            LuaValue sv = sectionCountDelegate.invoke(null)[0];
+            LuaValue[] rets = sectionCountDelegate.invoke(null);
+
+            final LuaValue sv;
+            if (rets == null || rets.length == 0) {
+                sv = Nil();
+            } else {
+                sv = rets[0];
+            }
             if (AssertUtils.assertNumber(sv, sectionCountDelegate, getGlobals())) {
                 sectionCount = sv.toInt();
             }
@@ -1024,7 +1031,13 @@ public abstract class UDBaseRecyclerAdapter<L extends UDBaseRecyclerLayout> exte
         int[] result = new int[resultCount];
         int allCount = 0;
         for (int i = 0; i < resultCount; i += 2) {
-            LuaValue rc = rowCountDelegate.invoke(varargsOf(toLuaInt(i >> 1)))[0];
+            LuaValue[] rets = rowCountDelegate.invoke(varargsOf(toLuaInt(i >> 1)));
+            final LuaValue rc;
+            if (rets == null || rets.length == 0) {
+                rc = Nil();
+            } else {
+                rc = rets[0];
+            }
             result[i] = allCount;
             if (AssertUtils.assertNumber(rc, rowCountDelegate, getGlobals()))
                 allCount += rc.toInt();
@@ -1231,13 +1244,13 @@ public abstract class UDBaseRecyclerAdapter<L extends UDBaseRecyclerLayout> exte
 //                recyclerView.setClipToPadding(false);
         }
 
-        if (layout instanceof UDCollectionViewGridLayoutFix) {//grid布局layoutInSet {@link GridLayoutItemDecorationFix}
+        if (layout instanceof UDCollectionLayout) {//grid布局layoutInSet {@link GridLayoutItemDecoration}
             if (layout.orientation == RecyclerView.VERTICAL) {//bottom为0，是因为Footer也是个cell，需要特殊处理spacing
                 recyclerView.setPadding(paddingValues[0] - layout.getItemSpacingPx(), paddingValues[1], paddingValues[2] - layout.getItemSpacingPx(), 0);
             } else {
                 recyclerView.setPadding(paddingValues[0], paddingValues[1] - layout.getlineSpacingPx(), 0, paddingValues[3] - layout.getlineSpacingPx());
             }
-        } else if (layout instanceof UDWaterfallLayoutFix) {//瀑布流布局layoutInSet, outRect.left = horizontalSpace / 2
+        } else if (layout instanceof UDWaterFallLayout) {//瀑布流布局layoutInSet, outRect.left = horizontalSpace / 2
             recyclerView.setPadding(paddingValues[0] - layout.getItemSpacingPx() / 2, paddingValues[1], paddingValues[2] - layout.getItemSpacingPx() / 2, 0);
         }
     }

@@ -11,6 +11,7 @@ import android.os.SystemClock;
 
 import com.immomo.mlncore.MLNCore;
 import com.immomo.mls.adapter.ConsoleLoggerAdapter;
+import com.immomo.mls.adapter.IFileCache;
 import com.immomo.mls.adapter.MLSEmptyViewAdapter;
 import com.immomo.mls.adapter.MLSGlobalEventAdapter;
 import com.immomo.mls.adapter.MLSGlobalStateListener;
@@ -21,6 +22,7 @@ import com.immomo.mls.adapter.MLSReloadButtonCreator;
 import com.immomo.mls.adapter.MLSResourceFinderAdapter;
 import com.immomo.mls.adapter.MLSThreadAdapter;
 import com.immomo.mls.adapter.OnRemovedUserdataAdapter;
+import com.immomo.mls.adapter.PreinstallError;
 import com.immomo.mls.adapter.ScriptReaderCreator;
 import com.immomo.mls.adapter.ToastAdapter;
 import com.immomo.mls.adapter.TypeFaceAdapter;
@@ -37,6 +39,7 @@ import com.immomo.mls.wrapper.Translator;
 
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaConfigs;
+import org.luaj.vm2.LuaUserdata;
 import org.luaj.vm2.utils.MemoryMonitor;
 import org.luaj.vm2.utils.ResourceFinder;
 
@@ -55,6 +58,7 @@ public class MLSBuilder {
     private final List<Class> constantsClass;
     private final List<SIHolder> siHolders;
     private final List<CHolder> cHolders;
+    private final List<Class<? extends LuaUserdata>> newUDHolders;
     private final Register register;
     private int preGlobalNum = 3;
     private boolean clearAll = false;
@@ -66,6 +70,7 @@ public class MLSBuilder {
         constantsClass = new ArrayList<>();
         siHolders = new ArrayList<>();
         cHolders = new ArrayList<>();
+        newUDHolders = new ArrayList<>();
     }
 
     //<editor-fold desc="Adapter">
@@ -148,16 +153,37 @@ public class MLSBuilder {
         MLSAdapterContainer.setReloadButtonCreator(creator);
         return this;
     }
+
+    public MLSBuilder setPreinstallError(PreinstallError error) {
+        MLSAdapterContainer.setPreinstallError(error);
+        return this;
+    }
+
+    public MLSBuilder setFileCache(IFileCache iFileCache) {
+        MLSAdapterContainer.setFileCache(iFileCache);
+        return this;
+    }
     //</editor-fold>
 
     //<editor-fold desc="Register">
     public MLSBuilder clearAll() {
         udHolders.clear();
+        newUDHolders.clear();
         sHolders.clear();
         constantsClass.clear();
         siHolders.clear();
         cHolders.clear();
         clearAll = true;
+        return this;
+    }
+
+    /**
+     * 注册高性能，新bridge
+     * 写法可参照{@link com.immomo.mls.fun.ud.UDCCanvas}，且需要在c层注册文件
+     * 建议使用Android Studio的模板生成java代码，实现完java层逻辑后，使用mlncgen.jar生成c层注册文件
+     */
+    public MLSBuilder registerNewUD(Class<? extends LuaUserdata>... clz) {
+        newUDHolders.addAll(Arrays.asList(clz));
         return this;
     }
 
@@ -472,6 +498,9 @@ public class MLSBuilder {
         long start = SystemClock.uptimeMillis();
         for (Register.UDHolder h : udHolders) {
             register.registerUserdata(h);
+        }
+        for (Class<? extends LuaUserdata> clz : newUDHolders) {
+            register.registerNewUserdata(clz);
         }
         for (Register.SHolder h : sHolders) {
             register.registerStaticBridge(h);

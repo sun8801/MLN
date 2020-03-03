@@ -7,6 +7,8 @@
   */
 package com.immomo.mls.wrapper;
 
+import com.immomo.mls.Environment;
+import com.immomo.mls.MLSAdapterContainer;
 import com.immomo.mls.MLSEngine;
 import com.immomo.mls.fun.ud.view.UDView;
 
@@ -20,6 +22,7 @@ import org.luaj.vm2.utils.SizeOfUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,6 +41,8 @@ public class Register {
     private static final String UD_CLASS_SUFFIX = "_udwrapper";
     private static final String SB_CLASS_SUFFIX = "_sbwrapper";
     private static final String METHODS_FIELD = "methods";
+    private static final String NEW_UD_INIT = "_init";
+    private static final String NEW_UD_REGISTER = "_register";
     private static final Map<Class, Class<? extends LuaUserdata>> udClassMap = new HashMap<>(20);
 
     private final List<SHolder> sHolders = new ArrayList<>(20);
@@ -48,6 +53,7 @@ public class Register {
     private final HashMap<Class, String> luaClassNameMap = new HashMap<>();
     private final AllUserdataHolder allUserdataHolder = new AllUserdataHolder();
     private final AllUserdataHolder lvUserdataHolder = new AllUserdataHolder();
+    private final List<NewUDHolder> newUDHolders = new ArrayList<>();
 
     private boolean preInstall = false;
     /**
@@ -62,6 +68,7 @@ public class Register {
         luaClassNameMap.clear();
         allUserdataHolder.clear();
         lvUserdataHolder.clear();
+        newUDHolders.clear();
     }
 
     /**
@@ -71,9 +78,20 @@ public class Register {
         return lvUserdataHolder.index > 0;
     }
 
-    //<editor-fold desc="check">
+    public boolean isPreInstall() {
+        return preInstall;
+    }
 
-    private boolean checkClassMethod(Class clz, String mn, Class... pc) throws NoSuchMethodException {
+    //<editor-fold desc="check">
+    private static boolean checkUD(Class clz, String methodName) {
+        return checkClassMethod(clz, methodName, LuaValue[].class);
+    }
+
+    private static boolean checkSC(Class clz, String methodName) {
+        return checkClassMethod(clz, methodName, long.class, LuaValue[].class);
+    }
+
+    private static boolean checkClassMethod(Class clz, String mn, Class... pc) {
         Method m = null;
         try {
             m = clz.getMethod(mn, pc);
@@ -85,7 +103,7 @@ public class Register {
             }  catch (NoSuchMethodException ignore) {
             }
         }
-        if (m == null) throw new NoSuchMethodException(clz.getName() + " has no method " + mn);
+        if (m == null) return false;
         if (m.getAnnotation(LuaApiUsed.class) == null) {
             clz = clz.getSuperclass();
             if (LuaUserdata.class == clz || JavaUserdata.class == clz) {
@@ -96,33 +114,26 @@ public class Register {
         return true;
     }
 
-    private void checkClassMethods(Class clz, String[] methods, boolean ud) {
+    private static void checkClassMethods(Class clz, String[] methods, boolean ud) {
         String name = clz.getSimpleName();
-        if (name.endsWith("_udwrapper") || name.endsWith("_sbwrapper")) {
-            return;
-        }
         if (clz.getAnnotation(LuaApiUsed.class) == null) {
             throw new ProGuardError("Throw in debug! No @LuaApiUsed in class " + clz.getName());
         }
         if (methods == null || methods.length == 0)
             return;
 
-        String methodName = null;
         try {
             for (String mn : methods) {
-                methodName = mn;
                 if (ud) {
-                    if (!checkClassMethod(clz, mn, LuaValue[].class)) {
+                    if (!checkUD(clz, mn)) {
                         throw new Exception(name + "." + mn + " has no LuaApiUsed annotation!");
                     }
                 } else {
-                    if (!checkClassMethod(clz, mn, long.class, LuaValue[].class)) {
+                    if (!checkSC(clz, mn)) {
                         throw new Exception(name + "." + mn + " has no LuaApiUsed annotation!");
                     }
                 }
             }
-        } catch (NoSuchMethodException e) {
-            throw new ProGuardError("Throw in debug! No method implement found for " + name + "." + methodName);
         } catch (Exception e) {
             throw new ProGuardError("Throw in debug! " + e.getMessage());
         }
@@ -168,7 +179,9 @@ public class Register {
             Field f = udClz.getDeclaredField(METHODS_FIELD);
             String[] ms = (String[]) f.get(null);
             for (String s : luaClassName) {
-                registerUserdata(new UDHolder(s, udClz, lazy, ms));
+                UDHolder h = new UDHolder(s, udClz, lazy, ms);
+                h.needCheck = false;
+                registerUserdata(h);
             }
             udClassMap.put(clz, udClz);
         } catch (Throwable e) {
@@ -182,7 +195,7 @@ public class Register {
      * @see #newUDHolder(String, Class, boolean, String...)
      */
     public void registerUserdata(UDHolder holder) {
-        if (MLSEngine.DEBUG)
+        if (MLSEngine.DEBUG && holder.needCheck)
             checkClassMethods(holder.clz, holder.methods, true);
         if (UDView.class.isAssignableFrom(holder.clz)) {
             lvUserdataHolder.add(holder);
@@ -190,6 +203,21 @@ public class Register {
             SizeOfUtils.sizeof(holder.clz);
             allUserdataHolder.add(holder);
         }
+    }
+
+    /**
+     * 注册高性能，新版userdata
+     * 其中必须有两个native函数:
+     *  static native void _init()
+     *  static native void _register(long l)
+     *
+     * 写法可参照{@link com.immomo.mls.fun.ud.UDCCanvas}，且需要在c层注册文件
+     * 建议使用Android Studio的模板生成java代码，实现完java层逻辑后，使用mlncgen.jar生成c层注册文件
+     */
+    public void registerNewUserdata(Class<? extends LuaUserdata> clz) {
+        NewUDHolder holder = new NewUDHolder(clz);
+        holder.init();
+        newUDHolders.add(holder);
     }
 
     /**
@@ -202,6 +230,28 @@ public class Register {
      */
     public static UDHolder newUDHolder(String lcn, Class<? extends LuaUserdata> clz, boolean lazy, String... methods) {
         return new UDHolder(lcn, clz, lazy, methods);
+    }
+
+    /**
+     * 创建包裹userdata信息的对象
+     * 注意：未按要求写的接口，不会增加到lua接口中
+     * @param lcn   lua类名
+     * @param clz   java中类名，必须继承自{@link LuaUserdata}
+     * @param lazy  是否是懒注册
+     */
+    public static UDHolder newUDHolderAuto(String lcn, Class<? extends LuaUserdata> clz, boolean lazy) {
+        Method[] methods = clz.getDeclaredMethods();
+        List<String> msl = new ArrayList<>(methods.length);
+        for (Method m : methods) {
+            if (((m.getModifiers() & Modifier.STATIC) != Modifier.STATIC)
+                    && m.getAnnotation(LuaApiUsed.class) != null
+                    && checkUD(clz, m.getName())) {
+                msl.add(m.getName());
+            }
+        }
+        UDHolder h = new UDHolder(lcn, clz, lazy, msl.toArray(new String[0]));
+        h.needCheck = false;
+        return h;
     }
 
     /**
@@ -222,7 +272,9 @@ public class Register {
             Field f = udClz.getDeclaredField(METHODS_FIELD);
             String[] ms = (String[]) f.get(null);
             udClassMap.put(clz, udClz);
-            return new UDHolder(lcn, udClz, lazy, ms);
+            UDHolder h = new UDHolder(lcn, udClz, lazy, ms);
+            h.needCheck = false;
+            return h;
         } catch (Throwable e) {
             throw new RegisterError(e);
         }
@@ -254,7 +306,7 @@ public class Register {
      * @see #newSHolder(String, Class, String...)
      */
     public void registerStaticBridge(SHolder holder) {
-        if (MLSEngine.DEBUG)
+        if (MLSEngine.DEBUG && holder.needCheck)
             checkClassMethods(holder.clz, holder.methods, false);
         sHolders.add(holder);
     }
@@ -272,6 +324,27 @@ public class Register {
 
     /**
      * 创建包裹静态bridge信息的对象
+     * 注意：未按要求写的接口，不会增加到lua接口中
+     * @param lcn   lua类名
+     * @param clz   java类
+     */
+    public static SHolder newSHolderAuto(String lcn, Class clz) {
+        Method[] methods = clz.getDeclaredMethods();
+        List<String> lms = new ArrayList<>(methods.length);
+        for (Method m : methods) {
+            if (((m.getModifiers() & Modifier.STATIC) == Modifier.STATIC)
+                    && m.getAnnotation(LuaApiUsed.class) != null
+                    && checkSC(clz, m.getName())) {
+                lms.add(m.getName());
+            }
+        }
+        SHolder h = new SHolder(lcn, clz, lms.toArray(new String[0]));
+        h.needCheck = false;
+        return h;
+    }
+
+    /**
+     * 创建包裹静态bridge信息的对象
      * class中必须含有{@link com.immomo.mls.annotation.LuaClass} 和 {@link com.immomo.mls.annotation.LuaBridge}注解
      *
      * @param lcn lua类名
@@ -283,7 +356,9 @@ public class Register {
             Class sclz = Class.forName(wrapperName);
             Field f = sclz.getDeclaredField(METHODS_FIELD);
             String[] ms = (String[]) f.get(null);
-            return new SHolder(lcn, sclz, ms);
+            SHolder s = new SHolder(lcn, sclz, ms);
+            s.needCheck = false;
+            return s;
         } catch (Throwable e) {
             throw new RegisterError(e);
         }
@@ -470,6 +545,9 @@ public class Register {
      * @param installView 是否注册View
      */
     public void install(Globals g, boolean installView) {
+        for (NewUDHolder h : newUDHolders) {
+            h.register(g);
+        }
         allUserdataHolder.install(g);
         if (installView)
             lvUserdataHolder.install(g);
@@ -490,12 +568,19 @@ public class Register {
     public void preInstall() {
         if (preInstall) return;
 
-        preInstall = true;
-        allUserdataHolder.preInstall();
-        lvUserdataHolder.preInstall();
-        for (SHolder h : sHolders) {
-            Globals.preRegisterStatic(h.clz, h.methods);
+        try {
+            allUserdataHolder.preInstall();
+            lvUserdataHolder.preInstall();
+            for (SHolder h : sHolders) {
+                Globals.preRegisterStatic(h.clz, h.methods);
+            }
+        } catch (Throwable t) {
+            if (MLSAdapterContainer.getPreinstallError() != null) {
+                MLSAdapterContainer.getPreinstallError().onError(t);
+            }
+            return;
         }
+        preInstall = true;
     }
 
     /**
@@ -619,10 +704,12 @@ public class Register {
         public String[] methods;
         /**
          * 是否懒注册
-         *
-         * @see Globals#registerLazyUserdataSimple
          */
         public boolean lazy = false;
+        /**
+         * 是否要检查LuaApiUsed注解
+         */
+        private boolean needCheck = true;
 
         private UDHolder(String lcn, Class<? extends LuaUserdata> clz, boolean lazy, String[] methods) {
             this.luaClassName = lcn;
@@ -667,6 +754,10 @@ public class Register {
          * 所有方法，必须是static
          */
         public String[] methods;
+        /**
+         * 是否要检查LuaApiUsed注解
+         */
+        private boolean needCheck = true;
 
         private SHolder(String lcn, Class clz, String[] methods) {
             this.luaClassName = lcn;
@@ -709,6 +800,43 @@ public class Register {
         NumberEnumHolder(String luaClassName, String[] keys, double[] values) {
             super(luaClassName, keys);
             this.values = values;
+        }
+    }
+
+    private static final class NewUDHolder {
+        private final Class<? extends LuaUserdata> clz;
+        private final Method registerMethod;
+        private Method initMethod;
+
+        private NewUDHolder(Class<? extends LuaUserdata> clz) {
+            this.clz = clz;
+            try {
+                initMethod = clz.getDeclaredMethod(NEW_UD_INIT);
+                registerMethod = clz.getDeclaredMethod(NEW_UD_REGISTER, long.class);
+                initMethod.setAccessible(true);
+                registerMethod.setAccessible(true);
+            } catch (Throwable t) {
+                throw new RegisterError("register " + clz.getName() + " failed!", t);
+            }
+        }
+
+        private void init() {
+            if (initMethod == null)
+                return;
+            try {
+                initMethod.invoke(null);
+                initMethod = null;
+            } catch (Throwable t) {
+                throw new RegisterError("init " + clz.getName() + " failed!", t);
+            }
+        }
+
+        private void register(Globals g) {
+            try {
+                registerMethod.invoke(null, g.getL_State());
+            } catch (Throwable e) {
+                Environment.callbackError(e, g);
+            }
         }
     }
 }

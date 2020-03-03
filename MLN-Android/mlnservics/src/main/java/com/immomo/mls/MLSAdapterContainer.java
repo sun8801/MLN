@@ -8,6 +8,7 @@
 package com.immomo.mls;
 
 import com.immomo.mls.adapter.ConsoleLoggerAdapter;
+import com.immomo.mls.adapter.IFileCache;
 import com.immomo.mls.adapter.MLSEmptyViewAdapter;
 import com.immomo.mls.adapter.MLSGlobalEventAdapter;
 import com.immomo.mls.adapter.MLSGlobalStateListener;
@@ -18,6 +19,7 @@ import com.immomo.mls.adapter.MLSReloadButtonCreator;
 import com.immomo.mls.adapter.MLSResourceFinderAdapter;
 import com.immomo.mls.adapter.MLSThreadAdapter;
 import com.immomo.mls.adapter.OnRemovedUserdataAdapter;
+import com.immomo.mls.adapter.PreinstallError;
 import com.immomo.mls.adapter.ScriptReaderCreator;
 import com.immomo.mls.adapter.ToastAdapter;
 import com.immomo.mls.adapter.TypeFaceAdapter;
@@ -30,6 +32,7 @@ import com.immomo.mls.adapter.impl.DefaultScriptReaderCreatorImpl;
 import com.immomo.mls.adapter.impl.DefaultThreadAdapter;
 import com.immomo.mls.adapter.impl.DefaultToastAdapter;
 import com.immomo.mls.adapter.impl.DefaultTypeFaceAdapter;
+import com.immomo.mls.adapter.impl.FileCacheImpl;
 import com.immomo.mls.adapter.impl.MLSReloadButtonCreatorImpl;
 import com.immomo.mls.provider.ImageProvider;
 import com.immomo.mls.utils.AssertUtils;
@@ -55,6 +58,8 @@ public class MLSAdapterContainer {
     private static MLSQrCaptureAdapter qrCaptureAdapter;
     private static OnRemovedUserdataAdapter onRemovedUserdataAdapter;
     private static MLSReloadButtonCreator reloadButtonCreator = new MLSReloadButtonCreatorImpl();
+    private static PreinstallError preinstallError;
+    private static IFileCache fileCache = new FileCacheImpl();
 
     public static MLSThreadAdapter getThreadAdapter() {
         return threadAdapter;
@@ -175,5 +180,21 @@ public class MLSAdapterContainer {
     public static void setReloadButtonCreator(MLSReloadButtonCreator reloadButtonCreator) {
         AssertUtils.assertNullForce(reloadButtonCreator);
         MLSAdapterContainer.reloadButtonCreator = reloadButtonCreator;
+    }
+
+    public static PreinstallError getPreinstallError() {
+        return preinstallError;
+    }
+
+    public static void setPreinstallError(PreinstallError preinstallError) {
+        MLSAdapterContainer.preinstallError = preinstallError;
+    }
+
+    public static IFileCache getFileCache() {
+        return fileCache;
+    }
+
+    public static void setFileCache(IFileCache fileCache) {
+        MLSAdapterContainer.fileCache = fileCache;
     }
 }
